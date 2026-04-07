@@ -1,0 +1,24 @@
+{
+  "overview": "A premium AI-powered job application tracker with smart URL parsing, drag-and-drop Kanban pipeline, powerful table view with natural language search, and an analytics dashboard with personalized AI insights — all in a polished, modern interface.",
+  "features": [
+    "AI-powered job URL parsing with Job Fit Score",
+    "Smart applications table with natural language search and AI flagging",
+    "Drag-and-drop Kanban pipeline with stall detection and AI suggestions",
+    "Analytics dashboard with interactive charts and personalized AI insights",
+    "Inline status editing and customizable columns",
+    "Light/dark mode with OKLCH design system",
+    "Internet Identity authentication with protected routes",
+    "Sample data with 20+ realistic demo applications"
+  ],
+  "category": "productivity",
+  "tags": [
+    "job-tracker",
+    "career",
+    "kanban",
+    "analytics",
+    "ai",
+    "productivity",
+    "applications"
+  ],
+  "last_updated": "2026-04-07T20:12:50.692Z"
+}

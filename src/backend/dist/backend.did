@@ -1,0 +1,198 @@
+type http_request_result = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type http_header = 
+ record {
+   name: text;
+   value: text;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserId = principal;
+type UpdateApplicationArgs = 
+ record {
+   aiSuggestion: opt text;
+   appliedDate: Timestamp;
+   companyName: text;
+   fitScore: opt nat;
+   fitScoreConfidence: opt nat;
+   id: AppId;
+   isHighPotential: bool;
+   jobType: JobType;
+   jobUrl: text;
+   location: text;
+   notes: text;
+   position: text;
+   salaryMax: opt nat;
+   salaryMin: opt nat;
+   source: ApplicationSource;
+   status: ApplicationStatus;
+   tags: vec text;
+ };
+type TransformationOutput = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type TransformationInput = 
+ record {
+   context: blob;
+   response: http_request_result;
+ };
+type Timestamp = int;
+type ParsedJobDetails = 
+ record {
+   companyName: text;
+   fitScore: opt nat;
+   fitScoreConfidence: opt nat;
+   jobType: opt JobType;
+   location: text;
+   notes: text;
+   position: text;
+   rawJson: text;
+   salaryMax: opt nat;
+   salaryMin: opt nat;
+   tags: vec text;
+ };
+type JobType = 
+ variant {
+   hybrid;
+   onsite;
+   remote;
+ };
+type GetApplicationsResult = 
+ record {
+   applications: vec Application;
+   page: nat;
+   pageSize: nat;
+   total: nat;
+ };
+type GetApplicationsArgs = 
+ record {
+   page: nat;
+   pageSize: nat;
+   statusFilter: opt ApplicationStatus;
+ };
+type DateRange = 
+ record {
+   fromDate: Timestamp;
+   toDate: Timestamp;
+ };
+type ApplicationsOverTime = 
+ record {
+   count: nat;
+   date: Timestamp;
+ };
+type ApplicationsBySource = 
+ record {
+   count: nat;
+   source: ApplicationSource;
+ };
+type ApplicationsByJobType = 
+ record {
+   count: nat;
+   jobType: JobType;
+ };
+type ApplicationStatus = 
+ variant {
+   Applied;
+   Archived;
+   Interviewing;
+   Offer;
+   Rejected;
+ };
+type ApplicationSource = 
+ variant {
+   direct;
+   job_board;
+   network;
+   recruiter;
+   referral;
+ };
+type Application = 
+ record {
+   aiSuggestion: opt text;
+   appliedDate: Timestamp;
+   companyName: text;
+   fitScore: opt nat;
+   fitScoreConfidence: opt nat;
+   id: AppId;
+   isHighPotential: bool;
+   jobType: JobType;
+   jobUrl: text;
+   lastUpdated: Timestamp;
+   location: text;
+   notes: text;
+   position: text;
+   salaryMax: opt nat;
+   salaryMin: opt nat;
+   source: ApplicationSource;
+   status: ApplicationStatus;
+   tags: vec text;
+   userId: UserId;
+ };
+type AppId = nat;
+type AnalyticsResult = 
+ record {
+   avgTimeToOffer: float64;
+   byJobType: vec ApplicationsByJobType;
+   bySource: vec ApplicationsBySource;
+   interviewRate: float64;
+   offerRate: float64;
+   overTime: vec ApplicationsOverTime;
+   responseRate: float64;
+   total: nat;
+ };
+type AiInsight = 
+ record {
+   category: text;
+   message: text;
+   priority: nat;
+ };
+type AddApplicationArgs = 
+ record {
+   aiSuggestion: opt text;
+   appliedDate: Timestamp;
+   companyName: text;
+   fitScore: opt nat;
+   fitScoreConfidence: opt nat;
+   isHighPotential: bool;
+   jobType: JobType;
+   jobUrl: text;
+   location: text;
+   notes: text;
+   position: text;
+   salaryMax: opt nat;
+   salaryMin: opt nat;
+   source: ApplicationSource;
+   status: ApplicationStatus;
+   tags: vec text;
+ };
+service : {
+  _initializeAccessControl: () -> ();
+  addApplication: (args: AddApplicationArgs) -> (Application);
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  deleteApplication: (id: nat) -> (bool);
+  getAnalytics: (dateRange: DateRange) -> (AnalyticsResult) query;
+  getApplication: (id: nat) -> (opt Application) query;
+  getApplications: (args: GetApplicationsArgs) ->
+   (GetApplicationsResult) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getInsights: () -> (vec AiInsight);
+  initSampleData: () -> (nat);
+  isCallerAdmin: () -> (bool) query;
+  parseJobUrl: (url: text) -> (ParsedJobDetails);
+  searchApplications: (searchQuery: text) -> (vec Application);
+  transform: (input: TransformationInput) -> (TransformationOutput) query;
+  updateApplication: (args: UpdateApplicationArgs) -> (opt Application);
+  updateApplicationStatus: (id: nat, status: ApplicationStatus) ->
+   (opt Application);
+}
