@@ -5,7 +5,13 @@ import type {
   ApplicationStatus as BackendStatus,
   UpdateApplicationArgs as BackendUpdateApplicationArgs,
 } from "@/backend";
-import { JobType as BackendJobType, createActor } from "@/backend";
+import {
+  ApplicationSource as BackendApplicationSource,
+  ApplicationStatus as BackendApplicationStatus,
+  JobType as BackendJobType,
+  createActor,
+} from "@/backend";
+import { useBackendContext } from "@/contexts/BackendContext";
 import type { GrokModel } from "@/store/useAppStore";
 import { useAppStore } from "@/store/useAppStore";
 import type {
@@ -206,58 +212,123 @@ export function useInsights() {
   });
 }
 
+// ── Build backend-compatible AddApplicationArgs from frontend type ─────────────
+function toBackendArgs(args: AddApplicationArgs): BackendAddApplicationArgs {
+  return {
+    companyName: args.companyName,
+    position: args.position,
+    location: args.location,
+    jobType: args.jobType as BackendAddApplicationArgs["jobType"],
+    source: args.source as BackendAddApplicationArgs["source"],
+    status: args.status as BackendAddApplicationArgs["status"],
+    jobUrl: args.jobUrl,
+    notes: args.notes,
+    tags: args.tags,
+    isHighPotential: args.isHighPotential,
+    appliedDate: args.appliedDate,
+    fitScore: args.fitScore,
+    fitScoreConfidence: args.fitScoreConfidence,
+    aiSuggestion: args.aiSuggestion,
+    salaryMin: args.salaryMin,
+    salaryMax: args.salaryMax,
+  };
+}
+
+// ── Build backend-compatible UpdateApplicationArgs from frontend type ──────────
+// Explicit enum mapping ensures Candid variant serialization works correctly.
+function toBackendUpdateArgs(
+  args: UpdateApplicationArgs,
+): BackendUpdateApplicationArgs {
+  const jobTypeMap: Record<string, BackendUpdateApplicationArgs["jobType"]> = {
+    remote: BackendJobType.remote,
+    hybrid: BackendJobType.hybrid,
+    onsite: BackendJobType.onsite,
+  };
+  const sourceMap: Record<string, BackendUpdateApplicationArgs["source"]> = {
+    direct: BackendApplicationSource.direct,
+    job_board: BackendApplicationSource.job_board,
+    referral: BackendApplicationSource.referral,
+    recruiter: BackendApplicationSource.recruiter,
+    network: BackendApplicationSource.network,
+  };
+  const statusMap: Record<string, BackendUpdateApplicationArgs["status"]> = {
+    Applied: BackendApplicationStatus.Applied,
+    Interviewing: BackendApplicationStatus.Interviewing,
+    Offer: BackendApplicationStatus.Offer,
+    Rejected: BackendApplicationStatus.Rejected,
+    Archived: BackendApplicationStatus.Archived,
+  };
+  return {
+    id: args.id,
+    companyName: args.companyName,
+    position: args.position,
+    location: args.location,
+    jobType: jobTypeMap[args.jobType] ?? BackendJobType.remote,
+    source: sourceMap[args.source] ?? BackendApplicationSource.direct,
+    status: statusMap[args.status] ?? BackendApplicationStatus.Applied,
+    jobUrl: args.jobUrl,
+    notes: args.notes,
+    tags: args.tags,
+    isHighPotential: args.isHighPotential,
+    appliedDate: args.appliedDate,
+    fitScore: args.fitScore,
+    fitScoreConfidence: args.fitScoreConfidence,
+    aiSuggestion: args.aiSuggestion,
+    salaryMin: args.salaryMin,
+    salaryMax: args.salaryMax,
+  };
+}
+
 export function useAddApplication() {
-  const { actor } = useActor(createActor);
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<Application, Error, AddApplicationArgs>({
     mutationFn: async (args) => {
-      if (!actor) throw new Error("Not connected");
-      const result = await actor.addApplication(
-        args as unknown as BackendAddApplicationArgs,
-      );
+      const actor = await waitForActor();
+      const backendArgs = toBackendArgs(args);
+      const result = await actor.addApplication(backendArgs);
       return toFrontendApp(result);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["applications"] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
-      toast.success("Application added successfully");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[JobTrack] addApplication failed:", error);
       toast.error("Failed to add application");
     },
   });
 }
 
 export function useUpdateApplication() {
-  const { actor } = useActor(createActor);
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<Application | null, Error, UpdateApplicationArgs>({
     mutationFn: async (args) => {
-      if (!actor) throw new Error("Not connected");
-      const result = await actor.updateApplication(
-        args as unknown as BackendUpdateApplicationArgs,
-      );
+      const actor = await waitForActor();
+      const result = await actor.updateApplication(toBackendUpdateArgs(args));
       return result ? toFrontendApp(result) : null;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["applications"] });
       toast.success("Application updated");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[JobTrack] updateApplication failed:", error);
       toast.error("Failed to update application");
     },
   });
 }
 
 export function useDeleteApplication() {
-  const { actor } = useActor(createActor);
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<boolean, Error, string>({
     mutationFn: async (id) => {
-      if (!actor) throw new Error("Not connected");
+      const actor = await waitForActor();
       return actor.deleteApplication(BigInt(id));
     },
     onSuccess: () => {
@@ -265,43 +336,46 @@ export function useDeleteApplication() {
       qc.invalidateQueries({ queryKey: ["analytics"] });
       toast.success("Application deleted");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[JobTrack] deleteApplication failed:", error);
       toast.error("Failed to delete application");
     },
   });
 }
 
 export function useUpdateApplicationStatus() {
-  const { actor } = useActor(createActor);
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<void, Error, { id: string; status: ApplicationStatus }>({
     mutationFn: async ({ id, status }) => {
-      if (!actor) throw new Error("Not connected");
+      const actor = await waitForActor();
       await actor.updateApplicationStatus(BigInt(id), status as BackendStatus);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["applications"] });
       toast.success("Status updated");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[JobTrack] updateApplicationStatus failed:", error);
       toast.error("Failed to update status");
     },
   });
 }
 
 export function useParseJobUrl() {
-  const { actor } = useActor(createActor);
+  const { waitForActor } = useBackendContext();
 
   return useMutation<ParsedJobDetails, Error, string>({
     mutationFn: async (url) => {
-      if (!actor) throw new Error("Not connected");
+      const actor = await waitForActor();
       let raw: Awaited<ReturnType<typeof actor.parseJobUrl>>;
       try {
         raw = await actor.parseJobUrl(url);
       } catch (err) {
         const msg =
           err instanceof Error ? err.message : "Unknown error from AI service";
+        console.error("[JobTrack] parseJobUrl error:", err);
         // Surface meaningful errors: missing API key, model errors, etc.
         if (
           msg.toLowerCase().includes("api key") ||
@@ -348,24 +422,144 @@ export function useParseJobUrl() {
       };
     },
     onError: (err) => {
+      console.error("[JobTrack] parseJobUrl failed:", err);
       toast.error(err.message ?? "Failed to parse job URL");
     },
   });
 }
 
+// ── Combined parse-and-add hook (single actor ref, single mutation) ───────────
+// Both parse and add run inside one mutationFn using the same live actor
+// obtained from waitForActor() — no race condition possible.
+
+export interface ParseAndAddResult {
+  parsed: ParsedJobDetails;
+  app: Application;
+}
+
+export function useParseAndAdd() {
+  const { waitForActor } = useBackendContext();
+  const qc = useQueryClient();
+
+  return useMutation<ParseAndAddResult, Error, string>({
+    mutationFn: async (url) => {
+      // waitForActor() retries for up to 5 s — handles transient null during init
+      const actor = await waitForActor();
+
+      // ── Step 1: parse the URL ──────────────────────────────────────────
+      let raw: Awaited<ReturnType<typeof actor.parseJobUrl>>;
+      try {
+        raw = await actor.parseJobUrl(url);
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Unknown error from AI service";
+        console.error("[JobTrack] parseJobUrl error:", err);
+        if (
+          msg.toLowerCase().includes("api key") ||
+          msg.toLowerCase().includes("grok")
+        ) {
+          throw new Error(
+            "Grok API key missing or invalid. Go to Settings to add your key.",
+          );
+        }
+        if (
+          msg.toLowerCase().includes("parse") ||
+          msg.toLowerCase().includes("json")
+        ) {
+          throw new Error(
+            "AI could not parse this job posting. Try a different URL.",
+          );
+        }
+        throw new Error(msg);
+      }
+
+      if (!raw.companyName && !raw.position) {
+        throw new Error(
+          "AI returned no job details. Check your API key in Settings.",
+        );
+      }
+
+      const parsed: ParsedJobDetails = {
+        companyName: raw.companyName,
+        position: raw.position,
+        location: raw.location,
+        jobType: raw.jobType as ParsedJobDetails["jobType"],
+        salary: formatSalary(raw.salaryMin, raw.salaryMax),
+        salaryMin: raw.salaryMin,
+        salaryMax: raw.salaryMax,
+        fitScore: raw.fitScore !== undefined ? Number(raw.fitScore) : undefined,
+        fitScoreConfidence:
+          raw.fitScoreConfidence !== undefined
+            ? Number(raw.fitScoreConfidence)
+            : undefined,
+        tags: raw.tags,
+        notes: raw.notes,
+        rawJson: raw.rawJson,
+      };
+
+      // ── Step 2: add to pipeline using the SAME actor from waitForActor ─
+      // No second actor lookup — guaranteed same live connection.
+      const addArgs: BackendAddApplicationArgs = {
+        companyName: parsed.companyName ?? "Unknown Company",
+        position: parsed.position ?? "Unknown Position",
+        location: parsed.location ?? "",
+        jobType: (parsed.jobType ??
+          "remote") as BackendAddApplicationArgs["jobType"],
+        source: "direct" as BackendAddApplicationArgs["source"],
+        status: "Applied" as BackendAddApplicationArgs["status"],
+        jobUrl: url,
+        notes: parsed.notes ?? "",
+        tags: parsed.tags ?? [],
+        isHighPotential: (parsed.fitScore ?? 0) >= 80,
+        appliedDate: BigInt(Date.now()) * NS_PER_MS,
+        fitScore:
+          parsed.fitScore !== undefined ? BigInt(parsed.fitScore) : undefined,
+        fitScoreConfidence:
+          parsed.fitScoreConfidence !== undefined
+            ? BigInt(parsed.fitScoreConfidence)
+            : undefined,
+        salaryMin: raw.salaryMin,
+        salaryMax: raw.salaryMax,
+        aiSuggestion: parsed.notes || undefined,
+      };
+
+      let app: Application;
+      try {
+        const result = await actor.addApplication(addArgs);
+        app = toFrontendApp(result);
+      } catch (err) {
+        console.error("[JobTrack] addApplication error:", err);
+        throw new Error(
+          err instanceof Error ? err.message : "Failed to save to pipeline",
+        );
+      }
+
+      return { parsed, app };
+    },
+    onSuccess: (_data) => {
+      qc.invalidateQueries({ queryKey: ["applications"] });
+      qc.invalidateQueries({ queryKey: ["analytics"] });
+    },
+    onError: (error) => {
+      console.error("[JobTrack] parseAndAdd failed:", error);
+    },
+  });
+}
+
 export function useInitSampleData() {
-  const { actor } = useActor(createActor);
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<bigint, Error, void>({
     mutationFn: async () => {
-      if (!actor) throw new Error("Not connected");
+      const actor = await waitForActor();
       return actor.initSampleData();
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["applications"] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[JobTrack] initSampleData failed:", error);
       toast.error("Failed to initialize sample data");
     },
   });
@@ -392,7 +586,7 @@ export function useGetGrokApiKey() {
 }
 
 export function useSetGrokApiKey() {
-  const { actor } = useActor(createActor);
+  const { waitForActor } = useBackendContext();
   const { setGrokApiKey, clearGrokApiKey } = useAppStore();
   const qc = useQueryClient();
 
@@ -401,15 +595,15 @@ export function useSetGrokApiKey() {
       // Persist locally immediately
       setGrokApiKey(key);
       // Also persist to backend so parseJobUrl can use it
-      if (actor) {
-        await actor.setGrokApiKey(key);
-      }
+      const actor = await waitForActor();
+      await actor.setGrokApiKey(key);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["grokApiKey"] });
       toast.success("Grok API key saved");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[JobTrack] setGrokApiKey failed:", error);
       toast.error("Failed to save Grok API key");
     },
   });
@@ -417,13 +611,16 @@ export function useSetGrokApiKey() {
   const clearMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
       clearGrokApiKey();
-      if (actor) {
-        await actor.setGrokApiKey("");
-      }
+      const actor = await waitForActor();
+      await actor.setGrokApiKey("");
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["grokApiKey"] });
       toast.success("Grok API key cleared");
+    },
+    onError: (error) => {
+      console.error("[JobTrack] clearGrokApiKey failed:", error);
+      toast.error("Failed to clear API key");
     },
   });
 
@@ -452,7 +649,7 @@ export function useGetGrokModel() {
 }
 
 export function useSetGrokModel() {
-  const { actor } = useActor(createActor);
+  const { waitForActor } = useBackendContext();
   const { setGrokModel } = useAppStore();
   const qc = useQueryClient();
 
@@ -461,15 +658,15 @@ export function useSetGrokModel() {
       // Persist locally immediately
       setGrokModel(model);
       // Also persist to backend so parseJobUrl can use it
-      if (actor) {
-        await actor.setGrokModel(model);
-      }
+      const actor = await waitForActor();
+      await actor.setGrokModel(model);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["grokModel"] });
       toast.success("Model preference saved");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("[JobTrack] setGrokModel failed:", error);
       toast.error("Failed to save model preference");
     },
   });

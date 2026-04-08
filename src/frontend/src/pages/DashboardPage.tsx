@@ -1,8 +1,9 @@
 import { ApplicationCard } from "@/components/ApplicationCard";
+import { useBackendReady } from "@/contexts/BackendContext";
 import {
   useAddApplication,
   useApplications,
-  useParseJobUrl,
+  useParseAndAdd,
 } from "@/hooks/useApplications";
 import type {
   AddApplicationArgs,
@@ -226,8 +227,14 @@ function FieldLabel({
 function UrlInputView({
   onParse,
   onManual,
-}: { onParse: (url: string) => void; onManual: () => void }) {
+  isBackendReady,
+}: {
+  onParse: (url: string) => void;
+  onManual: () => void;
+  isBackendReady: boolean;
+}) {
   const [url, setUrl] = useState("");
+  const canParse = url.trim().length > 0 && isBackendReady;
 
   return (
     <motion.div
@@ -244,7 +251,7 @@ function UrlInputView({
           onChange={setUrl}
           placeholder="https://jobs.company.com/role/..."
           onKeyDown={(e) =>
-            e.key === "Enter" && url.trim() && onParse(url.trim())
+            e.key === "Enter" && canParse && onParse(url.trim())
           }
         />
       </div>
@@ -252,12 +259,12 @@ function UrlInputView({
         <button
           type="button"
           data-ocid="parse-btn"
-          onClick={() => url.trim() && onParse(url.trim())}
-          disabled={!url.trim()}
+          onClick={() => canParse && onParse(url.trim())}
+          disabled={!canParse}
           className="ghost-button"
-          style={{ opacity: url.trim() ? 1 : 0.4 }}
+          style={{ opacity: canParse ? 1 : 0.4 }}
         >
-          Parse with AI
+          {!isBackendReady ? "Connecting..." : "Parse with AI"}
         </button>
         <button
           type="button"
@@ -698,7 +705,8 @@ export function DashboardPage() {
   );
   const [parseError, setParseError] = useState<string | null>(null);
 
-  const parseJobUrl = useParseJobUrl();
+  const isBackendReady = useBackendReady();
+  const parseAndAdd = useParseAndAdd();
   const addApplication = useAddApplication();
   // Recent apps for the list — page size 5
   const { data: appsData, isLoading: appsLoading } = useApplications({
@@ -719,42 +727,11 @@ export function DashboardPage() {
   const handleParse = (url: string) => {
     setParseError(null);
     setView("parsing");
-    parseJobUrl.mutate(url, {
-      onSuccess: (result) => {
-        setParsedResult(result);
-        // Auto-save to pipeline immediately — no manual confirmation needed
-        const args: AddApplicationArgs = {
-          companyName: result.companyName ?? "Unknown Company",
-          position: result.position ?? "Unknown Position",
-          location: result.location ?? "",
-          jobType: result.jobType ?? "remote",
-          source: "direct",
-          status: "Applied",
-          jobUrl: url,
-          notes: result.notes ?? "",
-          tags: result.tags ?? [],
-          isHighPotential: (result.fitScore ?? 0) >= 80,
-          appliedDate: BigInt(Date.now()) * BigInt(1_000_000),
-          fitScore:
-            result.fitScore !== undefined ? BigInt(result.fitScore) : undefined,
-          fitScoreConfidence:
-            result.fitScoreConfidence !== undefined
-              ? BigInt(result.fitScoreConfidence)
-              : undefined,
-          salaryMin: result.salaryMin,
-          salaryMax: result.salaryMax,
-          aiSuggestion: result.notes || undefined,
-        };
-        addApplication.mutate(args, {
-          onSuccess: (app) => {
-            toast.success(`${app.company} added to pipeline`);
-            setView("confirmation"); // show the parsed details as confirmation
-          },
-          onError: () => {
-            // Still show confirmation so user can retry manually
-            setView("confirmation");
-          },
-        });
+    parseAndAdd.mutate(url, {
+      onSuccess: ({ parsed, app }) => {
+        setParsedResult(parsed);
+        toast.success(`${app.company} added to pipeline`);
+        setView("confirmation");
       },
       onError: (err) => {
         setParseError(
@@ -898,6 +875,7 @@ export function DashboardPage() {
                   key="url"
                   onParse={handleParse}
                   onManual={() => setView("manual")}
+                  isBackendReady={isBackendReady}
                 />
               )}
               {view === "parsing" && <ParsingView key="parsing" />}

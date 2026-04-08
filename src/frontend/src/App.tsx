@@ -1,6 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/components/LoginPage";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BackendProvider, useBackendReady } from "@/contexts/BackendContext";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import {
   RouterProvider,
@@ -31,9 +32,15 @@ const SettingsPage = lazy(() =>
 );
 
 // ── Auth guard wrapper ────────────────────────────────────────────────────────
+// Gates on BOTH identity readiness (Internet Identity) AND actor readiness
+// (backend canister connection). Both must be confirmed before rendering
+// interactive UI — this closes the window where users could click buttons
+// before the backend actor was initialized.
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { loginStatus, identity } = useInternetIdentity();
+  const isBackendReady = useBackendReady();
 
+  // Phase 1: Internet Identity is still initializing
   if (loginStatus === "initializing") {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -46,8 +53,23 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Phase 2: Not logged in — show login page
   if (!identity) {
     return <LoginPage />;
+  }
+
+  // Phase 3: Logged in but backend actor not yet initialized
+  // Show minimal loading state rather than interactive UI with broken buttons
+  if (!isBackendReady) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="space-y-3 w-64">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
@@ -150,6 +172,16 @@ declare module "@tanstack/react-router" {
   }
 }
 
-export default function App() {
-  return <RouterProvider router={router} />;
+// ── AppWithBackend ─────────────────────────────────────────────────────────────
+// BackendProvider must be inside InternetIdentityProvider (which is in main.tsx)
+// so useActor() can access the identity context. It wraps the router so
+// AuthGuard (which uses useBackendReady) has access to the context.
+function AppWithBackend() {
+  return (
+    <BackendProvider>
+      <RouterProvider router={router} />
+    </BackendProvider>
+  );
 }
+
+export default AppWithBackend;
