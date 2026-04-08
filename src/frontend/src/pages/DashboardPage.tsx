@@ -1,4 +1,5 @@
 import { ApplicationCard } from "@/components/ApplicationCard";
+import { useBackendContext } from "@/contexts/BackendContext";
 import {
   useAddApplication,
   useApplications,
@@ -226,12 +227,14 @@ function FieldLabel({
 function UrlInputView({
   onParse,
   onManual,
+  isBackendReady,
 }: {
   onParse: (url: string) => void;
   onManual: () => void;
+  isBackendReady: boolean;
 }) {
   const [url, setUrl] = useState("");
-  const canParse = url.trim().length > 0;
+  const canParse = url.trim().length > 0 && isBackendReady;
 
   return (
     <motion.div
@@ -261,25 +264,28 @@ function UrlInputView({
           className="ghost-button"
           style={{ opacity: canParse ? 1 : 0.4 }}
         >
-          Parse with AI
+          {!isBackendReady ? "CONNECTING..." : "Parse with AI"}
         </button>
         <button
           type="button"
           data-ocid="manual-add-btn"
-          onClick={onManual}
+          onClick={isBackendReady ? onManual : undefined}
+          disabled={!isBackendReady}
           style={{
             background: "transparent",
             border: "none",
-            color: "rgba(240,240,250,0.5)",
+            color: isBackendReady
+              ? "rgba(240,240,250,0.5)"
+              : "rgba(240,240,250,0.25)",
             fontSize: 13,
             fontWeight: 700,
             letterSpacing: "1.17px",
             textTransform: "uppercase",
-            cursor: "pointer",
+            cursor: isBackendReady ? "pointer" : "default",
             padding: 0,
           }}
         >
-          Add Manually
+          {!isBackendReady ? "CONNECTING..." : "Add Manually"}
         </button>
       </div>
     </motion.div>
@@ -702,6 +708,7 @@ export function DashboardPage() {
   );
   const [parseError, setParseError] = useState<string | null>(null);
 
+  const { isBackendReady } = useBackendContext();
   const parseAndAdd = useParseAndAdd();
   const addApplication = useAddApplication();
   // Recent apps for the list — page size 5
@@ -871,6 +878,7 @@ export function DashboardPage() {
                   key="url"
                   onParse={handleParse}
                   onManual={() => setView("manual")}
+                  isBackendReady={isBackendReady}
                 />
               )}
               {view === "parsing" && <ParsingView key="parsing" />}

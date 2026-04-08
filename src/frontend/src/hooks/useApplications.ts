@@ -279,12 +279,12 @@ function toBackendUpdateArgs(
 }
 
 export function useAddApplication() {
-  const { getActor } = useBackendContext();
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<Application, Error, AddApplicationArgs>({
     mutationFn: async (args) => {
-      const actor = getActor();
+      const actor = await waitForActor();
       const backendArgs = toBackendArgs(args);
       const result = await actor.addApplication(backendArgs);
       return toFrontendApp(result);
@@ -301,12 +301,12 @@ export function useAddApplication() {
 }
 
 export function useUpdateApplication() {
-  const { getActor } = useBackendContext();
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<Application | null, Error, UpdateApplicationArgs>({
     mutationFn: async (args) => {
-      const actor = getActor();
+      const actor = await waitForActor();
       const result = await actor.updateApplication(toBackendUpdateArgs(args));
       return result ? toFrontendApp(result) : null;
     },
@@ -322,12 +322,12 @@ export function useUpdateApplication() {
 }
 
 export function useDeleteApplication() {
-  const { getActor } = useBackendContext();
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<boolean, Error, string>({
     mutationFn: async (id) => {
-      const actor = getActor();
+      const actor = await waitForActor();
       return actor.deleteApplication(BigInt(id));
     },
     onSuccess: () => {
@@ -343,12 +343,12 @@ export function useDeleteApplication() {
 }
 
 export function useUpdateApplicationStatus() {
-  const { getActor } = useBackendContext();
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<void, Error, { id: string; status: ApplicationStatus }>({
     mutationFn: async ({ id, status }) => {
-      const actor = getActor();
+      const actor = await waitForActor();
       await actor.updateApplicationStatus(BigInt(id), status as BackendStatus);
     },
     onSuccess: () => {
@@ -363,11 +363,11 @@ export function useUpdateApplicationStatus() {
 }
 
 export function useParseJobUrl() {
-  const { getActor } = useBackendContext();
+  const { waitForActor } = useBackendContext();
 
   return useMutation<ParsedJobDetails, Error, string>({
     mutationFn: async (url) => {
-      const actor = getActor();
+      const actor = await waitForActor();
       let raw: Awaited<ReturnType<typeof actor.parseJobUrl>>;
       try {
         raw = await actor.parseJobUrl(url);
@@ -435,13 +435,13 @@ export interface ParseAndAddResult {
 }
 
 export function useParseAndAdd() {
-  const { getActor } = useBackendContext();
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<ParseAndAddResult, Error, string>({
     mutationFn: async (url) => {
-      // Get actor synchronously — throws immediately if not connected
-      const actor = getActor();
+      // Wait for actor — resolves when backend is ready, rejects after 10s
+      const actor = await waitForActor();
 
       // ── Step 1: parse the URL ──────────────────────────────────────────
       let raw: Awaited<ReturnType<typeof actor.parseJobUrl>>;
@@ -543,12 +543,12 @@ export function useParseAndAdd() {
 }
 
 export function useInitSampleData() {
-  const { getActor } = useBackendContext();
+  const { waitForActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<bigint, Error, void>({
     mutationFn: async () => {
-      const actor = getActor();
+      const actor = await waitForActor();
       return actor.initSampleData();
     },
     onSuccess: () => {
@@ -582,7 +582,7 @@ export function useGetGrokApiKey() {
 }
 
 export function useSetGrokApiKey() {
-  const { getActor } = useBackendContext();
+  const { waitForActor } = useBackendContext();
   const { setGrokApiKey, clearGrokApiKey } = useAppStore();
   const qc = useQueryClient();
 
@@ -591,7 +591,7 @@ export function useSetGrokApiKey() {
       // Persist locally immediately
       setGrokApiKey(key);
       // Also persist to backend so parseJobUrl can use it
-      const actor = getActor();
+      const actor = await waitForActor();
       await actor.setGrokApiKey(key);
     },
     onSuccess: () => {
@@ -607,7 +607,7 @@ export function useSetGrokApiKey() {
   const clearMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
       clearGrokApiKey();
-      const actor = getActor();
+      const actor = await waitForActor();
       await actor.setGrokApiKey("");
     },
     onSuccess: () => {
@@ -645,7 +645,7 @@ export function useGetGrokModel() {
 }
 
 export function useSetGrokModel() {
-  const { getActor } = useBackendContext();
+  const { waitForActor } = useBackendContext();
   const { setGrokModel } = useAppStore();
   const qc = useQueryClient();
 
@@ -654,7 +654,7 @@ export function useSetGrokModel() {
       // Persist locally immediately
       setGrokModel(model);
       // Also persist to backend so parseJobUrl can use it
-      const actor = getActor();
+      const actor = await waitForActor();
       await actor.setGrokModel(model);
     },
     onSuccess: () => {
