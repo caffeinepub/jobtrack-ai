@@ -57,5 +57,10 @@ actor {
       var root : Node__46230540<Nat, Application__678882009>;
       var size : Nat__490723111
     };
+  stable grokApiKeys :
+    {
+      var root : Node__46230540<UserId__786370870, Text>;
+      var size : Nat__490723111
+    };
   stable nextAppId : [var Nat]
 };

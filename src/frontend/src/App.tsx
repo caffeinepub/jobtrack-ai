@@ -26,6 +26,9 @@ const KanbanPage = lazy(() =>
 const AnalyticsPage = lazy(() =>
   import("@/pages/AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })),
 );
+const SettingsPage = lazy(() =>
+  import("@/pages/SettingsPage").then((m) => ({ default: m.SettingsPage })),
+);
 
 // ── Auth guard wrapper ────────────────────────────────────────────────────────
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -121,11 +124,22 @@ const analyticsRoute = createRoute({
   ),
 });
 
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings",
+  component: () => (
+    <PageSuspense>
+      <SettingsPage />
+    </PageSuspense>
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   applicationsRoute,
   kanbanRoute,
   analyticsRoute,
+  settingsRoute,
 ]);
 
 const router = createRouter({ routeTree });

@@ -9,6 +9,7 @@ const BOTTOM_NAV = [
   { to: "/applications", label: "Apps" },
   { to: "/kanban", label: "Pipeline" },
   { to: "/analytics", label: "Analytics" },
+  { to: "/settings", label: "Settings" },
 ];
 
 export function Layout() {
@@ -49,6 +50,7 @@ export function Layout() {
                 <Link
                   key={to}
                   to={to}
+                  data-ocid={`mobile-nav-${label.toLowerCase()}`}
                   className={cn(
                     "flex-1 flex flex-col items-center justify-center py-3 nav-text tracking-nav transition-smooth",
                     isActive

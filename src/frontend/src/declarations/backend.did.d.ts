@@ -157,11 +157,13 @@ export interface _SERVICE {
   'getApplication' : ActorMethod<[bigint], [] | [Application]>,
   'getApplications' : ActorMethod<[GetApplicationsArgs], GetApplicationsResult>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getGrokApiKey' : ActorMethod<[], [] | [string]>,
   'getInsights' : ActorMethod<[], Array<AiInsight>>,
   'initSampleData' : ActorMethod<[], bigint>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'parseJobUrl' : ActorMethod<[string], ParsedJobDetails>,
   'searchApplications' : ActorMethod<[string], Array<Application>>,
+  'setGrokApiKey' : ActorMethod<[string], undefined>,
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
   'updateApplication' : ActorMethod<
     [UpdateApplicationArgs],

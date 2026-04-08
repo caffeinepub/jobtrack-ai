@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: "/applications", label: "Applications" },
   { to: "/kanban", label: "Pipeline" },
   { to: "/analytics", label: "Analytics" },
+  { to: "/settings", label: "Settings" },
 ];
 
 export function Sidebar() {

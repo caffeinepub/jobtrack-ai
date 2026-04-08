@@ -256,11 +256,13 @@ export interface backendInterface {
     getApplication(id: bigint): Promise<Application | null>;
     getApplications(args: GetApplicationsArgs): Promise<GetApplicationsResult>;
     getCallerUserRole(): Promise<UserRole>;
+    getGrokApiKey(): Promise<string | null>;
     getInsights(): Promise<Array<AiInsight>>;
     initSampleData(): Promise<bigint>;
     isCallerAdmin(): Promise<boolean>;
     parseJobUrl(url: string): Promise<ParsedJobDetails>;
     searchApplications(searchQuery: string): Promise<Array<Application>>;
+    setGrokApiKey(key: string): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
     updateApplication(args: UpdateApplicationArgs): Promise<Application | null>;
     updateApplicationStatus(id: bigint, status: ApplicationStatus): Promise<Application | null>;
@@ -380,6 +382,20 @@ export class Backend implements backendInterface {
             return from_candid_UserRole_n35(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getGrokApiKey(): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGrokApiKey();
+                return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGrokApiKey();
+            return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getInsights(): Promise<Array<AiInsight>> {
         if (this.processError) {
             try {
@@ -448,6 +464,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.searchApplications(arg0);
             return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async setGrokApiKey(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setGrokApiKey(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setGrokApiKey(arg0);
+            return result;
         }
     }
     async transform(arg0: TransformationInput): Promise<TransformationOutput> {

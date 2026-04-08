@@ -6,6 +6,7 @@ import type {
   UpdateApplicationArgs as BackendUpdateApplicationArgs,
 } from "@/backend";
 import { JobType as BackendJobType, createActor } from "@/backend";
+import { useAppStore } from "@/store/useAppStore";
 import type {
   AddApplicationArgs,
   AiInsight,
@@ -335,4 +336,38 @@ export function useInitSampleData() {
       toast.error("Failed to initialize sample data");
     },
   });
+}
+
+// ── Grok API Key hooks (stored locally via Zustand) ───────────────────────────
+
+export function useGetGrokApiKey() {
+  const grokApiKey = useAppStore((s) => s.grokApiKey);
+  return { data: grokApiKey, isLoading: false };
+}
+
+export function useSetGrokApiKey() {
+  const { setGrokApiKey, clearGrokApiKey } = useAppStore();
+
+  const saveMutation = useMutation<void, Error, string>({
+    mutationFn: async (key: string) => {
+      setGrokApiKey(key);
+    },
+    onSuccess: () => {
+      toast.success("Grok API key saved");
+    },
+    onError: () => {
+      toast.error("Failed to save Grok API key");
+    },
+  });
+
+  const clearMutation = useMutation<void, Error, void>({
+    mutationFn: async () => {
+      clearGrokApiKey();
+    },
+    onSuccess: () => {
+      toast.success("Grok API key cleared");
+    },
+  });
+
+  return { saveMutation, clearMutation };
 }

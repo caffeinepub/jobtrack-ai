@@ -293,4 +293,8 @@ export const mockBackend: backendInterface = {
     if (!existing) return null;
     return { ...existing, status, lastUpdated: now };
   },
+
+  getGrokApiKey: async () => null,
+
+  setGrokApiKey: async (_key: string) => {},
 };

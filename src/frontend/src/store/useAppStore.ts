@@ -25,6 +25,11 @@ interface AppStore {
   // Sidebar collapse
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
+
+  // Grok API Key
+  grokApiKey: string;
+  setGrokApiKey: (key: string) => void;
+  clearGrokApiKey: () => void;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -61,6 +66,10 @@ export const useAppStore = create<AppStore>()(
 
       sidebarCollapsed: false,
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+
+      grokApiKey: "",
+      setGrokApiKey: (key) => set({ grokApiKey: key }),
+      clearGrokApiKey: () => set({ grokApiKey: "" }),
     }),
     {
       name: "jobtrack-app-store",
@@ -68,6 +77,7 @@ export const useAppStore = create<AppStore>()(
         selectedView: state.selectedView,
         columnVisibility: state.columnVisibility,
         sidebarCollapsed: state.sidebarCollapsed,
+        grokApiKey: state.grokApiKey,
       }),
     },
   ),
