@@ -4,7 +4,11 @@ import { persist } from "zustand/middleware";
 
 type SelectedView = "table" | "kanban";
 
-export type GrokModel = "grok-3" | "grok-3-mini" | "grok-2-1212";
+export type GrokModel =
+  | "grok-4.20-0309-reasoning"
+  | "grok-3"
+  | "grok-3-mini"
+  | "grok-2-1212";
 
 interface AppStore {
   // View
@@ -77,7 +81,7 @@ export const useAppStore = create<AppStore>()(
       setGrokApiKey: (key) => set({ grokApiKey: key }),
       clearGrokApiKey: () => set({ grokApiKey: "" }),
 
-      grokModel: "grok-3-mini",
+      grokModel: "grok-4.20-0309-reasoning",
       setGrokModel: (model) => set({ grokModel: model }),
     }),
     {

@@ -334,52 +334,10 @@ function ParsingView() {
 // ── Confirmation View ──────────────────────────────────────────────────────────
 interface ConfirmationViewProps {
   parsed: ParsedJobDetails;
-  url: string;
-  onSave: (args: AddApplicationArgs) => void;
   onReset: () => void;
-  isSaving: boolean;
 }
 
-function ConfirmationView({
-  parsed,
-  url,
-  onSave,
-  onReset,
-  isSaving,
-}: ConfirmationViewProps) {
-  const [company, setCompany] = useState(parsed.companyName ?? "");
-  const [jobTitle, setJobTitle] = useState(parsed.position ?? "");
-  const [location, setLocation] = useState(parsed.location ?? "");
-  const [jobType, setJobType] = useState<JobType>(parsed.jobType ?? "remote");
-
-  const handleSave = () => {
-    if (!company || !jobTitle) {
-      toast.error("Company and job title are required");
-      return;
-    }
-    onSave({
-      companyName: company,
-      position: jobTitle,
-      location,
-      jobType,
-      source: "direct",
-      status: "Applied",
-      jobUrl: url,
-      notes: "",
-      tags: parsed.tags ?? [],
-      isHighPotential: (parsed.fitScore ?? 0) >= 80,
-      appliedDate: BigInt(Date.now()) * BigInt(1_000_000),
-      fitScore:
-        parsed.fitScore !== undefined ? BigInt(parsed.fitScore) : undefined,
-      fitScoreConfidence:
-        parsed.fitScoreConfidence !== undefined
-          ? BigInt(parsed.fitScoreConfidence)
-          : undefined,
-      salaryMin: parsed.salaryMin,
-      salaryMax: parsed.salaryMax,
-    });
-  };
-
+function ConfirmationView({ parsed, onReset }: ConfirmationViewProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -403,9 +361,10 @@ function ConfirmationView({
               color: "rgba(240,240,250,0.45)",
               letterSpacing: "1.17px",
               marginBottom: "0.25rem",
+              textTransform: "uppercase",
             }}
           >
-            AI Extracted
+            Job Added to Pipeline
           </p>
           {parsed.fitScore !== undefined && (
             <p
@@ -443,11 +402,11 @@ function ConfirmationView({
           }}
         >
           <RotateCcw size={12} />
-          Try Another
+          Add Another
         </button>
       </div>
 
-      {/* Fields */}
+      {/* Parsed fields — read-only display */}
       <div
         style={{
           display: "grid",
@@ -457,61 +416,80 @@ function ConfirmationView({
         }}
       >
         <div style={{ marginBottom: "1.5rem" }}>
-          <FieldLabel htmlFor="conf-company">Company *</FieldLabel>
-          <GhostInput
-            id="conf-company"
-            value={company}
-            onChange={setCompany}
-            placeholder="Company name"
-          />
+          <FieldLabel>Company</FieldLabel>
+          <p
+            style={{
+              padding: "10px 0",
+              color: "#f0f0fa",
+              fontSize: "13px",
+              letterSpacing: "1.17px",
+              textTransform: "uppercase",
+              borderBottom: "1px solid rgba(240,240,250,0.1)",
+            }}
+          >
+            {parsed.companyName || "—"}
+          </p>
         </div>
         <div style={{ marginBottom: "1.5rem" }}>
-          <FieldLabel htmlFor="conf-title">Role *</FieldLabel>
-          <GhostInput
-            id="conf-title"
-            value={jobTitle}
-            onChange={setJobTitle}
-            placeholder="Job title"
-          />
+          <FieldLabel>Role</FieldLabel>
+          <p
+            style={{
+              padding: "10px 0",
+              color: "#f0f0fa",
+              fontSize: "13px",
+              letterSpacing: "1.17px",
+              textTransform: "uppercase",
+              borderBottom: "1px solid rgba(240,240,250,0.1)",
+            }}
+          >
+            {parsed.position || "—"}
+          </p>
         </div>
         <div style={{ marginBottom: "1.5rem" }}>
-          <FieldLabel htmlFor="conf-location">Location</FieldLabel>
-          <GhostInput
-            id="conf-location"
-            value={location}
-            onChange={setLocation}
-            placeholder="City or Remote"
-          />
+          <FieldLabel>Location</FieldLabel>
+          <p
+            style={{
+              padding: "10px 0",
+              color: "#f0f0fa",
+              fontSize: "13px",
+              letterSpacing: "1.17px",
+              textTransform: "uppercase",
+              borderBottom: "1px solid rgba(240,240,250,0.1)",
+            }}
+          >
+            {parsed.location || "—"}
+          </p>
         </div>
         <div style={{ marginBottom: "1.5rem" }}>
-          <FieldLabel htmlFor="conf-type">Type</FieldLabel>
-          <GhostSelect
-            id="conf-type"
-            value={jobType}
-            onChange={(v) => setJobType(v as JobType)}
-            options={JOB_TYPES}
-          />
+          <FieldLabel>Type</FieldLabel>
+          <p
+            style={{
+              padding: "10px 0",
+              color: "#f0f0fa",
+              fontSize: "13px",
+              letterSpacing: "1.17px",
+              textTransform: "uppercase",
+              borderBottom: "1px solid rgba(240,240,250,0.1)",
+            }}
+          >
+            {parsed.jobType || "—"}
+          </p>
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-        <button
-          type="button"
-          data-ocid="save-application-btn"
-          onClick={handleSave}
-          disabled={isSaving || !company || !jobTitle}
-          className="ghost-button"
-          style={{ opacity: !company || !jobTitle ? 0.4 : 1 }}
-        >
-          {isSaving ? (
-            <Loader2
-              size={14}
-              style={{ marginRight: 8, animation: "spin 1s linear infinite" }}
-            />
-          ) : null}
-          Add to Pipeline
-        </button>
-      </div>
+      {/* Success indicator */}
+      <p
+        data-ocid="auto-add-success"
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "1.17px",
+          color: "rgba(240,240,250,0.6)",
+          textTransform: "uppercase",
+        }}
+      >
+        ✓ Automatically saved to your pipeline
+      </p>
     </motion.div>
   );
 }
@@ -715,7 +693,6 @@ function StatOverlay({
 // ── Main Dashboard Page ────────────────────────────────────────────────────────
 export function DashboardPage() {
   const [view, setView] = useState<ViewMode>("url-input");
-  const [parsedUrl, setParsedUrl] = useState("");
   const [parsedResult, setParsedResult] = useState<ParsedJobDetails | null>(
     null,
   );
@@ -723,28 +700,66 @@ export function DashboardPage() {
 
   const parseJobUrl = useParseJobUrl();
   const addApplication = useAddApplication();
+  // Recent apps for the list — page size 5
   const { data: appsData, isLoading: appsLoading } = useApplications({
     pageSize: BigInt(5),
   });
+  // Full count for mission control stats — reads total directly from backend
+  const { data: allAppsData } = useApplications({ pageSize: BigInt(1000) });
 
   const recentApps = (appsData?.applications ?? []).slice(0, 5);
-  const total = Number(appsData?.total ?? 0);
-  const active = recentApps.filter(
+  const total = Number(allAppsData?.total ?? 0);
+  const active = (allAppsData?.applications ?? []).filter(
     (a) => a.status === "Applied" || a.status === "Interviewing",
   ).length;
-  const offers = recentApps.filter((a) => a.status === "Offer").length;
+  const offers = (allAppsData?.applications ?? []).filter(
+    (a) => a.status === "Offer",
+  ).length;
 
   const handleParse = (url: string) => {
     setParseError(null);
-    setParsedUrl(url);
     setView("parsing");
     parseJobUrl.mutate(url, {
       onSuccess: (result) => {
         setParsedResult(result);
-        setView("confirmation");
+        // Auto-save to pipeline immediately — no manual confirmation needed
+        const args: AddApplicationArgs = {
+          companyName: result.companyName ?? "Unknown Company",
+          position: result.position ?? "Unknown Position",
+          location: result.location ?? "",
+          jobType: result.jobType ?? "remote",
+          source: "direct",
+          status: "Applied",
+          jobUrl: url,
+          notes: result.notes ?? "",
+          tags: result.tags ?? [],
+          isHighPotential: (result.fitScore ?? 0) >= 80,
+          appliedDate: BigInt(Date.now()) * BigInt(1_000_000),
+          fitScore:
+            result.fitScore !== undefined ? BigInt(result.fitScore) : undefined,
+          fitScoreConfidence:
+            result.fitScoreConfidence !== undefined
+              ? BigInt(result.fitScoreConfidence)
+              : undefined,
+          salaryMin: result.salaryMin,
+          salaryMax: result.salaryMax,
+          aiSuggestion: result.notes || undefined,
+        };
+        addApplication.mutate(args, {
+          onSuccess: (app) => {
+            toast.success(`${app.company} added to pipeline`);
+            setView("confirmation"); // show the parsed details as confirmation
+          },
+          onError: () => {
+            // Still show confirmation so user can retry manually
+            setView("confirmation");
+          },
+        });
       },
-      onError: () => {
-        setParseError("Couldn't parse that URL. Add manually instead.");
+      onError: (err) => {
+        setParseError(
+          err.message ?? "Couldn't parse that URL. Add manually instead.",
+        );
         setView("url-input");
       },
     });
@@ -756,7 +771,6 @@ export function DashboardPage() {
         toast.success(`${app.company} added to pipeline`);
         setView("url-input");
         setParsedResult(null);
-        setParsedUrl("");
       },
     });
   };
@@ -764,7 +778,6 @@ export function DashboardPage() {
   const handleReset = () => {
     setView("url-input");
     setParsedResult(null);
-    setParsedUrl("");
     setParseError(null);
   };
 
@@ -892,10 +905,7 @@ export function DashboardPage() {
                 <ConfirmationView
                   key="confirmation"
                   parsed={parsedResult}
-                  url={parsedUrl}
-                  onSave={handleSave}
                   onReset={handleReset}
-                  isSaving={addApplication.isPending}
                 />
               )}
               {view === "manual" && (

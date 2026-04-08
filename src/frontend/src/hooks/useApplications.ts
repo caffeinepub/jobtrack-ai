@@ -296,7 +296,39 @@ export function useParseJobUrl() {
   return useMutation<ParsedJobDetails, Error, string>({
     mutationFn: async (url) => {
       if (!actor) throw new Error("Not connected");
-      const raw = await actor.parseJobUrl(url);
+      let raw: Awaited<ReturnType<typeof actor.parseJobUrl>>;
+      try {
+        raw = await actor.parseJobUrl(url);
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Unknown error from AI service";
+        // Surface meaningful errors: missing API key, model errors, etc.
+        if (
+          msg.toLowerCase().includes("api key") ||
+          msg.toLowerCase().includes("grok")
+        ) {
+          throw new Error(
+            "Grok API key missing or invalid. Go to Settings to add your key.",
+          );
+        }
+        if (
+          msg.toLowerCase().includes("parse") ||
+          msg.toLowerCase().includes("json")
+        ) {
+          throw new Error(
+            "AI could not parse this job posting. Try a different URL.",
+          );
+        }
+        throw new Error(msg);
+      }
+
+      // Validate that we got meaningful data back
+      if (!raw.companyName && !raw.position) {
+        throw new Error(
+          "AI returned no job details. Check your API key in Settings.",
+        );
+      }
+
       return {
         companyName: raw.companyName,
         position: raw.position,
@@ -315,8 +347,8 @@ export function useParseJobUrl() {
         rawJson: raw.rawJson,
       };
     },
-    onError: () => {
-      toast.error("Failed to parse job URL");
+    onError: (err) => {
+      toast.error(err.message ?? "Failed to parse job URL");
     },
   });
 }
@@ -398,21 +430,43 @@ export function useSetGrokApiKey() {
   return { saveMutation, clearMutation };
 }
 
-// ── Grok Model hooks (client-side only via Zustand) ───────────────────────────
+// ── Grok Model hooks ─────────────────────────────────────────────────────────
 
 export function useGetGrokModel() {
-  const grokModel = useAppStore((s) => s.grokModel);
-  return { data: grokModel };
+  const { actor, isFetching } = useActor(createActor);
+  const localModel = useAppStore((s) => s.grokModel);
+
+  const query = useQuery<GrokModel | null>({
+    queryKey: ["grokModel"],
+    queryFn: async () => {
+      if (!actor) return null;
+      const result = await actor.getGrokModel();
+      return (result as GrokModel | null) ?? null;
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 300_000,
+  });
+
+  // Prefer backend data; fall back to local Zustand store
+  return { data: query.data ?? localModel, isLoading: query.isLoading };
 }
 
 export function useSetGrokModel() {
+  const { actor } = useActor(createActor);
   const { setGrokModel } = useAppStore();
+  const qc = useQueryClient();
 
   return useMutation<void, Error, GrokModel>({
     mutationFn: async (model: GrokModel) => {
+      // Persist locally immediately
       setGrokModel(model);
+      // Also persist to backend so parseJobUrl can use it
+      if (actor) {
+        await actor.setGrokModel(model);
+      }
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["grokModel"] });
       toast.success("Model preference saved");
     },
     onError: () => {

@@ -5,11 +5,15 @@ import {
   useSetGrokModel,
 } from "@/hooks/useApplications";
 import type { GrokModel } from "@/store/useAppStore";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const FONT = "'D-DIN', 'DIN', 'Barlow', ui-sans-serif, system-ui, sans-serif";
 
 const MODELS: { value: GrokModel; label: string }[] = [
+  {
+    value: "grok-4.20-0309-reasoning",
+    label: "GROK 4 — LATEST & MOST CAPABLE",
+  },
   { value: "grok-3", label: "GROK 3 — MOST CAPABLE" },
   { value: "grok-3-mini", label: "GROK 3 MINI — FASTER & EFFICIENT" },
   { value: "grok-2-1212", label: "GROK 2 — PREVIOUS GEN" },
@@ -18,7 +22,7 @@ const MODELS: { value: GrokModel; label: string }[] = [
 export function SettingsPage() {
   const { data: savedKey } = useGetGrokApiKey();
   const { saveMutation, clearMutation } = useSetGrokApiKey();
-  const { data: currentModel } = useGetGrokModel();
+  const { data: currentModel, isLoading: modelLoading } = useGetGrokModel();
   const setModelMutation = useSetGrokModel();
 
   const [inputValue, setInputValue] = useState("");
@@ -26,13 +30,20 @@ export function SettingsPage() {
     "idle",
   );
   const [selectedModel, setSelectedModel] = useState<GrokModel>(
-    currentModel ?? "grok-3-mini",
+    currentModel ?? "grok-4.20-0309-reasoning",
   );
   const [modelSaveStatus, setModelSaveStatus] = useState<"idle" | "saved">(
     "idle",
   );
   const statusTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modelStatusTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync selectedModel from backend once it loads
+  useEffect(() => {
+    if (currentModel && !modelLoading) {
+      setSelectedModel(currentModel);
+    }
+  }, [currentModel, modelLoading]);
 
   function handleSave() {
     if (!inputValue.trim()) return;
