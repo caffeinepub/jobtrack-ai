@@ -1,5 +1,4 @@
 import { ApplicationCard } from "@/components/ApplicationCard";
-import { useBackendReady } from "@/contexts/BackendContext";
 import {
   useAddApplication,
   useApplications,
@@ -227,14 +226,12 @@ function FieldLabel({
 function UrlInputView({
   onParse,
   onManual,
-  isBackendReady,
 }: {
   onParse: (url: string) => void;
   onManual: () => void;
-  isBackendReady: boolean;
 }) {
   const [url, setUrl] = useState("");
-  const canParse = url.trim().length > 0 && isBackendReady;
+  const canParse = url.trim().length > 0;
 
   return (
     <motion.div
@@ -264,7 +261,7 @@ function UrlInputView({
           className="ghost-button"
           style={{ opacity: canParse ? 1 : 0.4 }}
         >
-          {!isBackendReady ? "Connecting..." : "Parse with AI"}
+          Parse with AI
         </button>
         <button
           type="button"
@@ -705,7 +702,6 @@ export function DashboardPage() {
   );
   const [parseError, setParseError] = useState<string | null>(null);
 
-  const isBackendReady = useBackendReady();
   const parseAndAdd = useParseAndAdd();
   const addApplication = useAddApplication();
   // Recent apps for the list — page size 5
@@ -875,7 +871,6 @@ export function DashboardPage() {
                   key="url"
                   onParse={handleParse}
                   onManual={() => setView("manual")}
-                  isBackendReady={isBackendReady}
                 />
               )}
               {view === "parsing" && <ParsingView key="parsing" />}

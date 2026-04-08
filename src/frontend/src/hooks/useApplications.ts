@@ -235,7 +235,6 @@ function toBackendArgs(args: AddApplicationArgs): BackendAddApplicationArgs {
 }
 
 // ── Build backend-compatible UpdateApplicationArgs from frontend type ──────────
-// Explicit enum mapping ensures Candid variant serialization works correctly.
 function toBackendUpdateArgs(
   args: UpdateApplicationArgs,
 ): BackendUpdateApplicationArgs {
@@ -280,12 +279,12 @@ function toBackendUpdateArgs(
 }
 
 export function useAddApplication() {
-  const { waitForActor } = useBackendContext();
+  const { getActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<Application, Error, AddApplicationArgs>({
     mutationFn: async (args) => {
-      const actor = await waitForActor();
+      const actor = getActor();
       const backendArgs = toBackendArgs(args);
       const result = await actor.addApplication(backendArgs);
       return toFrontendApp(result);
@@ -302,12 +301,12 @@ export function useAddApplication() {
 }
 
 export function useUpdateApplication() {
-  const { waitForActor } = useBackendContext();
+  const { getActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<Application | null, Error, UpdateApplicationArgs>({
     mutationFn: async (args) => {
-      const actor = await waitForActor();
+      const actor = getActor();
       const result = await actor.updateApplication(toBackendUpdateArgs(args));
       return result ? toFrontendApp(result) : null;
     },
@@ -323,12 +322,12 @@ export function useUpdateApplication() {
 }
 
 export function useDeleteApplication() {
-  const { waitForActor } = useBackendContext();
+  const { getActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<boolean, Error, string>({
     mutationFn: async (id) => {
-      const actor = await waitForActor();
+      const actor = getActor();
       return actor.deleteApplication(BigInt(id));
     },
     onSuccess: () => {
@@ -344,12 +343,12 @@ export function useDeleteApplication() {
 }
 
 export function useUpdateApplicationStatus() {
-  const { waitForActor } = useBackendContext();
+  const { getActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<void, Error, { id: string; status: ApplicationStatus }>({
     mutationFn: async ({ id, status }) => {
-      const actor = await waitForActor();
+      const actor = getActor();
       await actor.updateApplicationStatus(BigInt(id), status as BackendStatus);
     },
     onSuccess: () => {
@@ -364,11 +363,11 @@ export function useUpdateApplicationStatus() {
 }
 
 export function useParseJobUrl() {
-  const { waitForActor } = useBackendContext();
+  const { getActor } = useBackendContext();
 
   return useMutation<ParsedJobDetails, Error, string>({
     mutationFn: async (url) => {
-      const actor = await waitForActor();
+      const actor = getActor();
       let raw: Awaited<ReturnType<typeof actor.parseJobUrl>>;
       try {
         raw = await actor.parseJobUrl(url);
@@ -376,7 +375,6 @@ export function useParseJobUrl() {
         const msg =
           err instanceof Error ? err.message : "Unknown error from AI service";
         console.error("[JobTrack] parseJobUrl error:", err);
-        // Surface meaningful errors: missing API key, model errors, etc.
         if (
           msg.toLowerCase().includes("api key") ||
           msg.toLowerCase().includes("grok")
@@ -396,7 +394,6 @@ export function useParseJobUrl() {
         throw new Error(msg);
       }
 
-      // Validate that we got meaningful data back
       if (!raw.companyName && !raw.position) {
         throw new Error(
           "AI returned no job details. Check your API key in Settings.",
@@ -428,9 +425,9 @@ export function useParseJobUrl() {
   });
 }
 
-// ── Combined parse-and-add hook (single actor ref, single mutation) ───────────
+// ── Combined parse-and-add hook ───────────────────────────────────────────────
 // Both parse and add run inside one mutationFn using the same live actor
-// obtained from waitForActor() — no race condition possible.
+// obtained synchronously from getActor() — no race, no polling.
 
 export interface ParseAndAddResult {
   parsed: ParsedJobDetails;
@@ -438,13 +435,13 @@ export interface ParseAndAddResult {
 }
 
 export function useParseAndAdd() {
-  const { waitForActor } = useBackendContext();
+  const { getActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<ParseAndAddResult, Error, string>({
     mutationFn: async (url) => {
-      // waitForActor() retries for up to 5 s — handles transient null during init
-      const actor = await waitForActor();
+      // Get actor synchronously — throws immediately if not connected
+      const actor = getActor();
 
       // ── Step 1: parse the URL ──────────────────────────────────────────
       let raw: Awaited<ReturnType<typeof actor.parseJobUrl>>;
@@ -497,8 +494,7 @@ export function useParseAndAdd() {
         rawJson: raw.rawJson,
       };
 
-      // ── Step 2: add to pipeline using the SAME actor from waitForActor ─
-      // No second actor lookup — guaranteed same live connection.
+      // ── Step 2: add to pipeline using the SAME actor ───────────────────
       const addArgs: BackendAddApplicationArgs = {
         companyName: parsed.companyName ?? "Unknown Company",
         position: parsed.position ?? "Unknown Position",
@@ -536,7 +532,7 @@ export function useParseAndAdd() {
 
       return { parsed, app };
     },
-    onSuccess: (_data) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["applications"] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
     },
@@ -547,12 +543,12 @@ export function useParseAndAdd() {
 }
 
 export function useInitSampleData() {
-  const { waitForActor } = useBackendContext();
+  const { getActor } = useBackendContext();
   const qc = useQueryClient();
 
   return useMutation<bigint, Error, void>({
     mutationFn: async () => {
-      const actor = await waitForActor();
+      const actor = getActor();
       return actor.initSampleData();
     },
     onSuccess: () => {
@@ -586,7 +582,7 @@ export function useGetGrokApiKey() {
 }
 
 export function useSetGrokApiKey() {
-  const { waitForActor } = useBackendContext();
+  const { getActor } = useBackendContext();
   const { setGrokApiKey, clearGrokApiKey } = useAppStore();
   const qc = useQueryClient();
 
@@ -595,7 +591,7 @@ export function useSetGrokApiKey() {
       // Persist locally immediately
       setGrokApiKey(key);
       // Also persist to backend so parseJobUrl can use it
-      const actor = await waitForActor();
+      const actor = getActor();
       await actor.setGrokApiKey(key);
     },
     onSuccess: () => {
@@ -611,7 +607,7 @@ export function useSetGrokApiKey() {
   const clearMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
       clearGrokApiKey();
-      const actor = await waitForActor();
+      const actor = getActor();
       await actor.setGrokApiKey("");
     },
     onSuccess: () => {
@@ -649,7 +645,7 @@ export function useGetGrokModel() {
 }
 
 export function useSetGrokModel() {
-  const { waitForActor } = useBackendContext();
+  const { getActor } = useBackendContext();
   const { setGrokModel } = useAppStore();
   const qc = useQueryClient();
 
@@ -658,7 +654,7 @@ export function useSetGrokModel() {
       // Persist locally immediately
       setGrokModel(model);
       // Also persist to backend so parseJobUrl can use it
-      const actor = await waitForActor();
+      const actor = getActor();
       await actor.setGrokModel(model);
     },
     onSuccess: () => {
