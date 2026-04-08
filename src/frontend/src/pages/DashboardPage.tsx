@@ -1,17 +1,9 @@
 import { ApplicationCard } from "@/components/ApplicationCard";
-import { JobFitBadge } from "@/components/JobFitBadge";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   useAddApplication,
   useApplications,
   useParseJobUrl,
 } from "@/hooks/useApplications";
-import { cn } from "@/lib/utils";
 import type {
   AddApplicationArgs,
   ApplicationSource,
@@ -23,19 +15,9 @@ import { Link } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowRight,
-  Bot,
-  Check,
   ChevronDown,
-  ExternalLink,
-  Link2,
   Loader2,
-  MapPin,
-  Pencil,
-  Plus,
   RotateCcw,
-  Sparkles,
-  Tag,
-  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -51,11 +33,8 @@ interface ManualForm {
   jobType: JobType;
   source: ApplicationSource;
   status: ApplicationStatus;
-  salary: string;
   url: string;
   notes: string;
-  tags: string;
-  remote: boolean;
 }
 
 const JOB_TYPES: JobType[] = ["remote", "hybrid", "onsite"];
@@ -81,174 +60,279 @@ const DEFAULT_MANUAL: ManualForm = {
   jobType: "remote",
   source: "job_board",
   status: "Applied",
-  salary: "",
   url: "",
   notes: "",
-  tags: "",
-  remote: false,
 };
 
-// ── Confidence bar component ───────────────────────────────────────────────────
-function ConfidenceBar({ label, value }: { label: string; value: number }) {
-  const pct = Math.round(value * 100);
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium text-foreground">{pct}%</span>
-      </div>
-      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-        <motion.div
-          className="h-full rounded-full"
-          style={{
-            background:
-              pct >= 75
-                ? "var(--color-chart-3)"
-                : pct >= 50
-                  ? "var(--color-chart-2)"
-                  : "var(--color-muted-foreground)",
-          }}
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ── Editable field ─────────────────────────────────────────────────────────────
-function EditableField({
-  label,
+// ── Ghost Select ───────────────────────────────────────────────────────────────
+function GhostSelect({
   value,
   onChange,
-  placeholder,
+  options,
+  id,
 }: {
-  label: string;
   value: string;
   onChange: (v: string) => void;
-  placeholder?: string;
+  options: string[];
+  id?: string;
 }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-        {label}
-      </Label>
-      <Input
+    <div className="relative">
+      <select
+        id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-8 text-sm bg-background/60 border-border/60 focus:border-primary/60"
+        style={{
+          width: "100%",
+          padding: "10px 36px 10px 0",
+          background: "transparent",
+          border: "none",
+          borderBottom: "1px solid rgba(240,240,250,0.2)",
+          color: "#f0f0fa",
+          fontSize: "13px",
+          fontWeight: 700,
+          appearance: "none",
+          cursor: "pointer",
+          outline: "none",
+        }}
+      >
+        {options.map((o) => (
+          <option
+            key={o}
+            value={o}
+            style={{ background: "#000", color: "#f0f0fa" }}
+          >
+            {o.replace(/_/g, " ")}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        style={{
+          position: "absolute",
+          right: 4,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 14,
+          height: 14,
+          color: "rgba(240,240,250,0.4)",
+          pointerEvents: "none",
+        }}
       />
     </div>
   );
 }
 
-// ── URL Parse view ─────────────────────────────────────────────────────────────
+// ── Ghost Input ────────────────────────────────────────────────────────────────
+function GhostInput({
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  id,
+  onKeyDown,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  id?: string;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+}) {
+  return (
+    <input
+      id={id}
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={onKeyDown}
+      placeholder={placeholder}
+      style={{
+        width: "100%",
+        padding: "10px 0",
+        background: "transparent",
+        border: "none",
+        borderBottom: "1px solid rgba(240,240,250,0.2)",
+        color: "#f0f0fa",
+        fontSize: "13px",
+        fontWeight: 400,
+        outline: "none",
+        fontFamily: "'Space Grotesk', sans-serif",
+        letterSpacing: "1.17px",
+        textTransform: "uppercase",
+      }}
+    />
+  );
+}
+
+// ── Ghost Textarea ─────────────────────────────────────────────────────────────
+function GhostTextarea({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={3}
+      style={{
+        width: "100%",
+        padding: "10px 0",
+        background: "transparent",
+        border: "none",
+        borderBottom: "1px solid rgba(240,240,250,0.2)",
+        color: "#f0f0fa",
+        fontSize: "13px",
+        fontWeight: 400,
+        outline: "none",
+        resize: "none",
+        fontFamily: "'Space Grotesk', sans-serif",
+        letterSpacing: "1.17px",
+        textTransform: "uppercase",
+      }}
+    />
+  );
+}
+
+// ── Field label ────────────────────────────────────────────────────────────────
+function FieldLabel({
+  children,
+  htmlFor,
+}: { children: React.ReactNode; htmlFor?: string }) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      style={{
+        display: "block",
+        fontSize: 10,
+        fontWeight: 700,
+        color: "rgba(240,240,250,0.45)",
+        letterSpacing: "1.17px",
+        textTransform: "uppercase",
+        marginBottom: 2,
+      }}
+    >
+      {children}
+    </label>
+  );
+}
+
+// ── URL Input View ─────────────────────────────────────────────────────────────
 function UrlInputView({
   onParse,
   onManual,
-}: {
-  onParse: (url: string) => void;
-  onManual: () => void;
-}) {
+}: { onParse: (url: string) => void; onManual: () => void }) {
   const [url, setUrl] = useState("");
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.25 }}
-      className="space-y-3"
+      transition={{ duration: 0.3 }}
     >
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            data-ocid="url-input"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && url.trim() && onParse(url.trim())
-            }
-            placeholder="Paste job posting URL here…"
-            className="pl-10 h-12 text-base bg-background border-border/60 focus:border-primary/50 transition-smooth placeholder:text-muted-foreground/50"
-          />
-        </div>
-        <Button
+      <div style={{ marginBottom: "2rem" }}>
+        <FieldLabel htmlFor="url-paste">Paste Job URL</FieldLabel>
+        <GhostInput
+          id="url-paste"
+          value={url}
+          onChange={setUrl}
+          placeholder="https://jobs.company.com/role/..."
+          onKeyDown={(e) =>
+            e.key === "Enter" && url.trim() && onParse(url.trim())
+          }
+        />
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <button
+          type="button"
           data-ocid="parse-btn"
           onClick={() => url.trim() && onParse(url.trim())}
           disabled={!url.trim()}
-          className="h-12 px-6 gap-2 font-semibold"
+          className="ghost-button"
+          style={{ opacity: url.trim() ? 1 : 0.4 }}
         >
-          <Sparkles className="w-4 h-4" />
           Parse with AI
-        </Button>
+        </button>
+        <button
+          type="button"
+          data-ocid="manual-add-btn"
+          onClick={onManual}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "rgba(240,240,250,0.5)",
+            fontSize: 13,
+            fontWeight: 700,
+            letterSpacing: "1.17px",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          Add Manually
+        </button>
       </div>
-      <button
-        type="button"
-        data-ocid="manual-add-btn"
-        onClick={onManual}
-        className="text-xs text-muted-foreground hover:text-primary transition-smooth flex items-center gap-1"
-      >
-        <Pencil className="w-3 h-3" />
-        Add manually instead
-      </button>
     </motion.div>
   );
 }
 
-// ── Parsing animation ──────────────────────────────────────────────────────────
+// ── Parsing View ───────────────────────────────────────────────────────────────
 function ParsingView() {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-center py-12 gap-4"
+      style={{ padding: "3rem 0", textAlign: "center" }}
     >
-      <div className="relative w-16 h-16 flex items-center justify-center">
-        <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
-        <motion.div
-          className="absolute inset-0 rounded-full border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent"
-          animate={{ rotate: 360 }}
-          transition={{
-            duration: 1,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "linear",
-          }}
-        />
-        <Bot className="w-6 h-6 text-primary" />
-      </div>
-      <div className="text-center space-y-1">
-        <p className="font-semibold text-foreground">
-          AI is reading the job posting…
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Extracting details and calculating your fit score
-        </p>
-      </div>
-      <div className="flex gap-1.5">
-        {[0, 0.2, 0.4].map((delay) => (
-          <motion.div
-            key={delay}
-            className="w-1.5 h-1.5 rounded-full bg-primary/50"
-            animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
-            transition={{
-              duration: 1.2,
-              repeat: Number.POSITIVE_INFINITY,
-              delay,
-            }}
-          />
-        ))}
-      </div>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{
+          duration: 1.2,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "linear",
+        }}
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          border: "1px solid rgba(240,240,250,0.15)",
+          borderTopColor: "#f0f0fa",
+          margin: "0 auto 1.5rem",
+        }}
+      />
+      <p
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          letterSpacing: "1.17px",
+          color: "rgba(240,240,250,0.7)",
+        }}
+      >
+        AI Reading Job Posting...
+      </p>
+      <p
+        style={{
+          fontSize: 11,
+          color: "rgba(240,240,250,0.35)",
+          marginTop: "0.5rem",
+          letterSpacing: "1.17px",
+        }}
+      >
+        Extracting details and calculating fit score
+      </p>
     </motion.div>
   );
 }
 
-// ── Confirmation panel ─────────────────────────────────────────────────────────
-interface ConfirmationPanelProps {
+// ── Confirmation View ──────────────────────────────────────────────────────────
+interface ConfirmationViewProps {
   parsed: ParsedJobDetails;
   url: string;
   onSave: (args: AddApplicationArgs) => void;
@@ -256,29 +340,17 @@ interface ConfirmationPanelProps {
   isSaving: boolean;
 }
 
-function ConfirmationPanel({
+function ConfirmationView({
   parsed,
   url,
   onSave,
   onReset,
   isSaving,
-}: ConfirmationPanelProps) {
+}: ConfirmationViewProps) {
   const [company, setCompany] = useState(parsed.companyName ?? "");
   const [jobTitle, setJobTitle] = useState(parsed.position ?? "");
   const [location, setLocation] = useState(parsed.location ?? "");
   const [jobType, setJobType] = useState<JobType>(parsed.jobType ?? "remote");
-  const [salary, setSalary] = useState(parsed.salary ?? "");
-  const [activeTags, setActiveTags] = useState<string[]>(parsed.tags ?? []);
-  const confidence =
-    parsed.fitScoreConfidence !== undefined
-      ? parsed.fitScoreConfidence / 100
-      : 0.85;
-
-  const toggleTag = (tag: string) => {
-    setActiveTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
-  };
 
   const handleSave = () => {
     if (!company || !jobTitle) {
@@ -294,7 +366,7 @@ function ConfirmationPanel({
       status: "Applied",
       jobUrl: url,
       notes: "",
-      tags: activeTags,
+      tags: parsed.tags ?? [],
       isHighPotential: (parsed.fitScore ?? 0) >= 80,
       appliedDate: BigInt(Date.now()) * BigInt(1_000_000),
       fitScore:
@@ -310,203 +382,142 @@ function ConfirmationPanel({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="space-y-4"
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center">
-            <Check className="w-3.5 h-3.5 text-green-500" />
-          </div>
-          <span className="text-sm font-semibold text-foreground">
-            Extracted successfully
-          </span>
-          <span className="text-xs text-muted-foreground">
-            · Review &amp; save
-          </span>
+      {/* Extracted header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: "2.5rem",
+        }}
+      >
+        <div>
+          <p
+            style={{
+              fontSize: 10,
+              color: "rgba(240,240,250,0.45)",
+              letterSpacing: "1.17px",
+              marginBottom: "0.25rem",
+            }}
+          >
+            AI Extracted
+          </p>
+          {parsed.fitScore !== undefined && (
+            <p
+              style={{
+                fontSize: 40,
+                fontWeight: 700,
+                letterSpacing: "0.96px",
+                lineHeight: 1,
+                color: "#f0f0fa",
+              }}
+            >
+              {parsed.fitScore}
+              <span style={{ fontSize: 16, opacity: 0.5, marginLeft: 4 }}>
+                % Fit
+              </span>
+            </p>
+          )}
         </div>
         <button
           type="button"
           onClick={onReset}
-          className="text-xs text-muted-foreground hover:text-foreground transition-smooth flex items-center gap-1"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "transparent",
+            border: "none",
+            color: "rgba(240,240,250,0.4)",
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "1.17px",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            padding: 0,
+          }}
         >
-          <RotateCcw className="w-3 h-3" />
-          Try another
+          <RotateCcw size={12} />
+          Try Another
         </button>
       </div>
 
-      {/* Main confirmation card */}
-      <div className="rounded-xl border border-border bg-card/60 backdrop-blur-sm overflow-hidden">
-        {/* Top strip with fit score */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-primary/5">
-          <div>
-            <h3 className="font-display font-bold text-foreground text-lg leading-tight">
-              {company || "Company"}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {jobTitle || "Position"}
-            </p>
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <JobFitBadge
-              score={parsed.fitScore ?? 0}
-              confidence={confidence}
-              size="lg"
-            />
-            <span className="text-[10px] text-muted-foreground font-medium">
-              Fit Score
-            </span>
-          </div>
-        </div>
-
-        {/* Fields grid */}
-        <div className="px-5 py-4 grid grid-cols-2 gap-3">
-          <EditableField
-            label="Company"
+      {/* Fields */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "0 3rem",
+          marginBottom: "2rem",
+        }}
+      >
+        <div style={{ marginBottom: "1.5rem" }}>
+          <FieldLabel htmlFor="conf-company">Company *</FieldLabel>
+          <GhostInput
+            id="conf-company"
             value={company}
             onChange={setCompany}
             placeholder="Company name"
           />
-          <EditableField
-            label="Job Title"
+        </div>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <FieldLabel htmlFor="conf-title">Role *</FieldLabel>
+          <GhostInput
+            id="conf-title"
             value={jobTitle}
             onChange={setJobTitle}
-            placeholder="Position title"
+            placeholder="Job title"
           />
-          <EditableField
-            label="Location"
+        </div>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <FieldLabel htmlFor="conf-location">Location</FieldLabel>
+          <GhostInput
+            id="conf-location"
             value={location}
             onChange={setLocation}
-            placeholder="City, State"
+            placeholder="City or Remote"
           />
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-              Job Type
-            </Label>
-            <div className="relative">
-              <select
-                value={jobType}
-                onChange={(e) => setJobType(e.target.value as JobType)}
-                className="w-full h-8 text-sm rounded-md border border-border/60 bg-background/60 px-2 pr-7 appearance-none focus:outline-none focus:border-primary/60 transition-smooth"
-              >
-                {JOB_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            </div>
-          </div>
-          <EditableField
-            label="Salary Range"
-            value={salary}
-            onChange={setSalary}
-            placeholder="e.g. $160k–$200k"
+        </div>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <FieldLabel htmlFor="conf-type">Type</FieldLabel>
+          <GhostSelect
+            id="conf-type"
+            value={jobType}
+            onChange={(v) => setJobType(v as JobType)}
+            options={JOB_TYPES}
           />
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-              Job URL
-            </Label>
-            <a
-              href={url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1 text-xs text-primary hover:underline transition-smooth truncate"
-            >
-              <ExternalLink className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{url}</span>
-            </a>
-          </div>
         </div>
+      </div>
 
-        {/* Confidence indicators */}
-        <div className="px-5 py-3 border-t border-border bg-muted/20">
-          <p className="text-xs font-medium text-muted-foreground mb-2.5 flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />
-            AI Confidence
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            <ConfidenceBar
-              label="Company"
-              value={Math.min(1, confidence * 1.05)}
+      <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+        <button
+          type="button"
+          data-ocid="save-application-btn"
+          onClick={handleSave}
+          disabled={isSaving || !company || !jobTitle}
+          className="ghost-button"
+          style={{ opacity: !company || !jobTitle ? 0.4 : 1 }}
+        >
+          {isSaving ? (
+            <Loader2
+              size={14}
+              style={{ marginRight: 8, animation: "spin 1s linear infinite" }}
             />
-            <ConfidenceBar label="Job Title" value={Math.min(1, confidence)} />
-            <ConfidenceBar
-              label="Salary"
-              value={Math.max(0.4, confidence * 0.85)}
-            />
-          </div>
-        </div>
-
-        {/* Tags */}
-        {(parsed.tags?.length ?? 0) > 0 && (
-          <div className="px-5 py-3 border-t border-border">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Tag className="w-3 h-3 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">
-                Suggested Tags
-              </span>
-              <span className="text-[10px] text-muted-foreground/60">
-                (click to toggle)
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {(parsed.tags ?? []).map((tag, i) => (
-                <motion.button
-                  key={tag}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  onClick={() => toggleTag(tag)}
-                  data-ocid={`tag-toggle-${tag}`}
-                  className={cn(
-                    "fit-badge text-[11px] transition-smooth",
-                    activeTags.includes(tag)
-                      ? "bg-primary/15 text-primary border-primary/40"
-                      : "bg-muted text-muted-foreground border-border/60",
-                  )}
-                >
-                  {activeTags.includes(tag) && (
-                    <Check className="w-2.5 h-2.5" />
-                  )}
-                  {tag}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Save action */}
-        <div className="px-5 py-4 border-t border-border flex items-center justify-between bg-card/40">
-          <p className="text-xs text-muted-foreground">
-            {activeTags.length} tag{activeTags.length !== 1 ? "s" : ""} selected
-          </p>
-          <Button
-            data-ocid="save-application-btn"
-            onClick={handleSave}
-            disabled={isSaving || !company || !jobTitle}
-            className="gap-2 font-semibold"
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4" />
-            )}
-            Add to Pipeline
-          </Button>
-        </div>
+          ) : null}
+          Add to Pipeline
+        </button>
       </div>
     </motion.div>
   );
 }
 
-// ── Manual form ────────────────────────────────────────────────────────────────
-function ManualForm({
+// ── Manual Form View ───────────────────────────────────────────────────────────
+function ManualFormView({
   onSave,
   onCancel,
   isSaving,
@@ -516,7 +527,7 @@ function ManualForm({
   isSaving: boolean;
 }) {
   const [form, setForm] = useState<ManualForm>(DEFAULT_MANUAL);
-  const set = (k: keyof ManualForm) => (v: string | boolean) =>
+  const set = (k: keyof ManualForm) => (v: string) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -534,10 +545,7 @@ function ManualForm({
       status: form.status,
       jobUrl: form.url || "",
       notes: form.notes || "",
-      tags: form.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tags: [],
       isHighPotential: false,
       appliedDate: BigInt(Date.now()) * BigInt(1_000_000),
     });
@@ -545,215 +553,162 @@ function ManualForm({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.25 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.3 }}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-xl border border-border bg-card/60 overflow-hidden">
-          <div className="px-5 py-4 border-b border-border bg-muted/20 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Pencil className="w-4 h-4 text-muted-foreground" />
-              <span className="font-semibold text-sm text-foreground">
-                Add Application Manually
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="text-muted-foreground hover:text-foreground transition-smooth"
-            >
-              <X className="w-4 h-4" />
-            </button>
+      <form onSubmit={handleSubmit}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "0 3rem",
+            marginBottom: "2rem",
+          }}
+        >
+          <div style={{ marginBottom: "1.5rem" }}>
+            <FieldLabel htmlFor="m-company">Company *</FieldLabel>
+            <GhostInput
+              data-ocid="manual-company"
+              id="m-company"
+              value={form.company}
+              onChange={set("company")}
+              placeholder="e.g. SpaceX"
+            />
           </div>
+          <div style={{ marginBottom: "1.5rem" }}>
+            <FieldLabel htmlFor="m-title">Job Title *</FieldLabel>
+            <GhostInput
+              data-ocid="manual-title"
+              id="m-title"
+              value={form.jobTitle}
+              onChange={set("jobTitle")}
+              placeholder="e.g. Senior Engineer"
+            />
+          </div>
+          <div style={{ marginBottom: "1.5rem" }}>
+            <FieldLabel htmlFor="m-location">Location</FieldLabel>
+            <GhostInput
+              data-ocid="manual-location"
+              id="m-location"
+              value={form.location}
+              onChange={set("location")}
+              placeholder="Hawthorne, CA or Remote"
+            />
+          </div>
+          <div style={{ marginBottom: "1.5rem" }}>
+            <FieldLabel htmlFor="m-type">Job Type</FieldLabel>
+            <GhostSelect
+              id="m-type"
+              value={form.jobType}
+              onChange={set("jobType")}
+              options={JOB_TYPES}
+            />
+          </div>
+          <div style={{ marginBottom: "1.5rem" }}>
+            <FieldLabel htmlFor="m-source">Source</FieldLabel>
+            <GhostSelect
+              id="m-source"
+              value={form.source}
+              onChange={set("source")}
+              options={SOURCES}
+            />
+          </div>
+          <div style={{ marginBottom: "1.5rem" }}>
+            <FieldLabel htmlFor="m-status">Status</FieldLabel>
+            <GhostSelect
+              id="m-status"
+              value={form.status}
+              onChange={set("status")}
+              options={STATUSES}
+            />
+          </div>
+          <div style={{ marginBottom: "1.5rem", gridColumn: "1 / -1" }}>
+            <FieldLabel htmlFor="m-url">Job URL</FieldLabel>
+            <GhostInput
+              data-ocid="manual-url"
+              id="m-url"
+              type="url"
+              value={form.url}
+              onChange={set("url")}
+              placeholder="https://..."
+            />
+          </div>
+          <div style={{ marginBottom: "1.5rem", gridColumn: "1 / -1" }}>
+            <FieldLabel>Notes</FieldLabel>
+            <GhostTextarea
+              value={form.notes}
+              onChange={set("notes")}
+              placeholder="Any notes about this role..."
+            />
+          </div>
+        </div>
 
-          <div className="px-5 py-4 grid grid-cols-2 gap-3">
-            {/* Company */}
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Company *
-              </Label>
-              <Input
-                data-ocid="manual-company"
-                value={form.company}
-                onChange={(e) => set("company")(e.target.value)}
-                placeholder="e.g. Stripe"
-                className="h-8 text-sm"
-                required
-              />
-            </div>
-            {/* Job Title */}
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Job Title *
-              </Label>
-              <Input
-                data-ocid="manual-title"
-                value={form.jobTitle}
-                onChange={(e) => set("jobTitle")(e.target.value)}
-                placeholder="e.g. Senior Engineer"
-                className="h-8 text-sm"
-                required
-              />
-            </div>
-            {/* Location */}
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Location
-              </Label>
-              <Input
-                data-ocid="manual-location"
-                value={form.location}
-                onChange={(e) => set("location")(e.target.value)}
-                placeholder="City, State or Remote"
-                className="h-8 text-sm"
-              />
-            </div>
-            {/* Job Type */}
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Job Type
-              </Label>
-              <div className="relative">
-                <select
-                  data-ocid="manual-jobtype"
-                  value={form.jobType}
-                  onChange={(e) => set("jobType")(e.target.value)}
-                  className="w-full h-8 text-sm rounded-md border border-border bg-background px-2 pr-7 appearance-none focus:outline-none focus:border-primary/60"
-                >
-                  {JOB_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-            {/* Salary */}
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Salary Range
-              </Label>
-              <Input
-                data-ocid="manual-salary"
-                value={form.salary}
-                onChange={(e) => set("salary")(e.target.value)}
-                placeholder="$100k–$130k"
-                className="h-8 text-sm"
-              />
-            </div>
-            {/* Source */}
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Source
-              </Label>
-              <div className="relative">
-                <select
-                  data-ocid="manual-source"
-                  value={form.source}
-                  onChange={(e) => set("source")(e.target.value)}
-                  className="w-full h-8 text-sm rounded-md border border-border bg-background px-2 pr-7 appearance-none focus:outline-none focus:border-primary/60"
-                >
-                  {SOURCES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-            {/* Status */}
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Status
-              </Label>
-              <div className="relative">
-                <select
-                  data-ocid="manual-status"
-                  value={form.status}
-                  onChange={(e) => set("status")(e.target.value)}
-                  className="w-full h-8 text-sm rounded-md border border-border bg-background px-2 pr-7 appearance-none focus:outline-none focus:border-primary/60"
-                >
-                  {STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-            {/* URL */}
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Job URL
-              </Label>
-              <Input
-                data-ocid="manual-url"
-                value={form.url}
-                onChange={(e) => set("url")(e.target.value)}
-                placeholder="https://..."
-                className="h-8 text-sm"
-                type="url"
-              />
-            </div>
-            {/* Tags */}
-            <div className="col-span-2 space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Tags (comma-separated)
-              </Label>
-              <Input
-                data-ocid="manual-tags"
-                value={form.tags}
-                onChange={(e) => set("tags")(e.target.value)}
-                placeholder="react, typescript, remote"
-                className="h-8 text-sm"
-              />
-            </div>
-            {/* Notes */}
-            <div className="col-span-2 space-y-1">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                Notes
-              </Label>
-              <Textarea
-                data-ocid="manual-notes"
-                value={form.notes}
-                onChange={(e) => set("notes")(e.target.value)}
-                placeholder="Any notes about this role…"
-                className="text-sm min-h-[72px] resize-none"
-              />
-            </div>
-          </div>
-
-          <div className="px-5 py-4 border-t border-border flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              className="gap-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              data-ocid="manual-submit-btn"
-              type="submit"
-              disabled={isSaving}
-              className="gap-2 font-semibold"
-            >
-              {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Plus className="w-4 h-4" />
-              )}
-              Add to Pipeline
-            </Button>
-          </div>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          <button
+            type="submit"
+            data-ocid="manual-submit-btn"
+            disabled={isSaving}
+            className="ghost-button"
+          >
+            {isSaving ? <Loader2 size={14} style={{ marginRight: 8 }} /> : null}
+            Add to Pipeline
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "rgba(240,240,250,0.4)",
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "1.17px",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Cancel
+          </button>
         </div>
       </form>
     </motion.div>
+  );
+}
+
+// ── STAT display ───────────────────────────────────────────────────────────────
+function StatOverlay({
+  value,
+  label,
+}: { value: string | number; label: string }) {
+  return (
+    <div>
+      <p
+        style={{
+          fontSize: "clamp(2rem, 5vw, 3.5rem)",
+          fontWeight: 700,
+          letterSpacing: "0.96px",
+          lineHeight: 1,
+          color: "#f0f0fa",
+        }}
+      >
+        {value}
+      </p>
+      <p
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "1.17px",
+          color: "rgba(240,240,250,0.5)",
+          marginTop: "0.4rem",
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </p>
+    </div>
   );
 }
 
@@ -773,6 +728,11 @@ export function DashboardPage() {
   });
 
   const recentApps = (appsData?.applications ?? []).slice(0, 5);
+  const total = Number(appsData?.total ?? 0);
+  const active = recentApps.filter(
+    (a) => a.status === "Applied" || a.status === "Interviewing",
+  ).length;
+  const offers = recentApps.filter((a) => a.status === "Offer").length;
 
   const handleParse = (url: string) => {
     setParseError(null);
@@ -784,7 +744,7 @@ export function DashboardPage() {
         setView("confirmation");
       },
       onError: () => {
-        setParseError("Couldn't parse that URL. Try adding manually instead.");
+        setParseError("Couldn't parse that URL. Add manually instead.");
         setView("url-input");
       },
     });
@@ -793,10 +753,7 @@ export function DashboardPage() {
   const handleSave = (args: AddApplicationArgs) => {
     addApplication.mutate(args, {
       onSuccess: (app) => {
-        toast.success("Application added!", {
-          description: `${app.company} · ${app.jobTitle}`,
-          action: { label: "View all", onClick: () => {} },
-        });
+        toast.success(`${app.company} added to pipeline`);
         setView("url-input");
         setParsedResult(null);
         setParsedUrl("");
@@ -812,135 +769,298 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="min-h-full bg-background">
-      {/* Page header */}
-      <div className="border-b border-border bg-card px-6 py-5">
-        <div className="max-w-3xl">
-          <h1 className="font-display text-2xl font-bold text-foreground leading-tight">
-            Add Application
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Paste a job URL and let AI extract the details instantly.
-          </p>
+    <div style={{ background: "#000", minHeight: "100vh" }}>
+      {/* ── Hero Scene — full 100vh with aerospace photography ─────────────── */}
+      <section
+        className="full-bleed-section"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1541185934-01b600ea069c?w=1920&q=80')",
+        }}
+      >
+        <div className="image-overlay" />
+        <div className="scene-content">
+          {/* Stats row — numbers directly on photography */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            style={{
+              display: "flex",
+              gap: "4vw",
+              marginBottom: "3rem",
+            }}
+          >
+            <StatOverlay value={total} label="Total Applications" />
+            <StatOverlay value={active} label="Active" />
+            <StatOverlay value={offers} label="Offers" />
+          </motion.div>
+
+          {/* Mission Control title */}
+          <motion.h1
+            className="display-text"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            style={{ marginBottom: "0.5rem" }}
+          >
+            Mission Control
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "1.17px",
+              color: "rgba(240,240,250,0.55)",
+              marginBottom: "2.5rem",
+            }}
+          >
+            Your Job Application Pipeline
+          </motion.p>
+
+          {/* CTA row */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            style={{ display: "flex", gap: "1rem" }}
+          >
+            <Link
+              to="/applications"
+              className="ghost-button"
+              data-ocid="view-pipeline-cta"
+            >
+              View Pipeline
+            </Link>
+            <Link
+              to="/kanban"
+              className="ghost-button"
+              data-ocid="view-kanban-cta"
+            >
+              Kanban Board
+            </Link>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
-      <div className="px-6 py-6 max-w-3xl space-y-8">
-        {/* ── AI Parse / Manual Form card ────────────────────────────────────── */}
-        <section>
-          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-            {/* Card header */}
-            <div className="flex items-center gap-2.5 px-6 py-4 border-b border-border bg-gradient-to-r from-primary/8 to-transparent">
-              <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-sm text-foreground">
-                  AI-Powered Job Parser
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Paste a URL and we'll extract everything automatically
-                </p>
-              </div>
-            </div>
+      {/* ── AI Parse Section ────────────────────────────────────────────────── */}
+      <section style={{ padding: "6rem 5vw" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <p
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "1.17px",
+              color: "rgba(240,240,250,0.35)",
+              marginBottom: "0.5rem",
+            }}
+          >
+            AI-Powered
+          </p>
+          <h2
+            style={{
+              fontSize: "clamp(1.5rem, 3vw, 2.5rem)",
+              fontWeight: 700,
+              letterSpacing: "0.96px",
+              color: "#f0f0fa",
+              marginBottom: "3rem",
+              lineHeight: 1.1,
+            }}
+          >
+            Add New Application
+          </h2>
 
-            {/* Card body */}
-            <div className="px-6 py-5">
-              <AnimatePresence mode="wait">
-                {view === "url-input" && (
-                  <UrlInputView
-                    key="url"
-                    onParse={handleParse}
-                    onManual={() => setView("manual")}
-                  />
-                )}
-                {view === "parsing" && <ParsingView key="parsing" />}
-                {view === "confirmation" && parsedResult && (
-                  <ConfirmationPanel
-                    key="confirmation"
-                    parsed={parsedResult}
-                    url={parsedUrl}
-                    onSave={handleSave}
-                    onReset={handleReset}
-                    isSaving={addApplication.isPending}
-                  />
-                )}
-                {view === "manual" && (
-                  <ManualForm
-                    key="manual"
-                    onSave={handleSave}
-                    onCancel={handleReset}
-                    isSaving={addApplication.isPending}
-                  />
-                )}
-              </AnimatePresence>
-
-              {/* Error banner */}
-              {parseError && view === "url-input" && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-3 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2.5"
-                >
-                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-destructive">{parseError}</p>
-                </motion.div>
+          <div style={{ maxWidth: 640 }}>
+            <AnimatePresence mode="wait">
+              {view === "url-input" && (
+                <UrlInputView
+                  key="url"
+                  onParse={handleParse}
+                  onManual={() => setView("manual")}
+                />
               )}
-            </div>
+              {view === "parsing" && <ParsingView key="parsing" />}
+              {view === "confirmation" && parsedResult && (
+                <ConfirmationView
+                  key="confirmation"
+                  parsed={parsedResult}
+                  url={parsedUrl}
+                  onSave={handleSave}
+                  onReset={handleReset}
+                  isSaving={addApplication.isPending}
+                />
+              )}
+              {view === "manual" && (
+                <ManualFormView
+                  key="manual"
+                  onSave={handleSave}
+                  onCancel={handleReset}
+                  isSaving={addApplication.isPending}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Error message */}
+            {parseError && view === "url-input" && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginTop: "1.5rem",
+                  color: "rgba(240,240,250,0.6)",
+                  fontSize: 12,
+                  letterSpacing: "1.17px",
+                }}
+              >
+                <AlertCircle size={14} />
+                {parseError}
+              </motion.div>
+            )}
           </div>
-        </section>
+        </motion.div>
+      </section>
 
-        {/* ── Recent Applications ─────────────────────────────────────────────── */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              Recent Applications
-              {appsData && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                  {appsData.total}
-                </Badge>
-              )}
-            </h2>
+      {/* ── Recent Applications Section ──────────────────────────────────────── */}
+      <section
+        style={{
+          padding: "6rem 5vw",
+          borderTop: "1px solid rgba(240,240,250,0.06)",
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Section header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              marginBottom: "3rem",
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "1.17px",
+                  color: "rgba(240,240,250,0.35)",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Recent Activity
+              </p>
+              <h2
+                style={{
+                  fontSize: "clamp(1.5rem, 3vw, 2.5rem)",
+                  fontWeight: 700,
+                  letterSpacing: "0.96px",
+                  color: "#f0f0fa",
+                  lineHeight: 1.1,
+                }}
+              >
+                Latest Applications
+              </h2>
+            </div>
             <Link
               to="/applications"
               data-ocid="view-all-apps-link"
-              className="text-xs text-primary hover:text-primary/80 transition-smooth flex items-center gap-1"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: "1.17px",
+                color: "rgba(240,240,250,0.5)",
+                textDecoration: "none",
+                textTransform: "uppercase",
+                transition: "color 0.3s",
+              }}
             >
-              View all
-              <ArrowRight className="w-3 h-3" />
+              View All
+              <ArrowRight size={14} />
             </Link>
           </div>
 
+          {/* Application list — text-only rows */}
           {appsLoading ? (
-            <div className="space-y-2">
+            <div>
               {[0, 1, 2].map((i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                <div
+                  key={i}
+                  style={{
+                    padding: "1.5rem 0",
+                    borderBottom: "1px solid rgba(240,240,250,0.06)",
+                    opacity: 0.3,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "40%",
+                      height: 14,
+                      background: "rgba(240,240,250,0.1)",
+                      borderRadius: 2,
+                      marginBottom: 8,
+                    }}
+                  />
+                  <div
+                    style={{
+                      width: "25%",
+                      height: 10,
+                      background: "rgba(240,240,250,0.06)",
+                      borderRadius: 2,
+                    }}
+                  />
+                </div>
               ))}
             </div>
           ) : recentApps.length === 0 ? (
-            <div
-              data-ocid="empty-recent-apps"
-              className="flex flex-col items-center justify-center py-10 gap-3 rounded-xl border border-dashed border-border bg-muted/20"
-            >
-              <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-foreground">
-                  No applications yet
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Paste a job URL above to get started
-                </p>
-              </div>
+            <div data-ocid="empty-recent-apps" style={{ paddingTop: "3rem" }}>
+              <p
+                style={{
+                  fontSize: "clamp(1.5rem, 3vw, 2.5rem)",
+                  fontWeight: 700,
+                  letterSpacing: "0.96px",
+                  color: "rgba(240,240,250,0.2)",
+                  marginBottom: "1rem",
+                }}
+              >
+                No Applications Yet
+              </p>
+              <p
+                style={{
+                  fontSize: 13,
+                  letterSpacing: "1.17px",
+                  color: "rgba(240,240,250,0.3)",
+                }}
+              >
+                Paste a job URL above to get started
+              </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div>
               {recentApps.map((app, i) => (
                 <motion.div
                   key={app.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, x: -12 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
                   transition={{ delay: i * 0.07 }}
                 >
                   <ApplicationCard application={app} />
@@ -948,8 +1068,8 @@ export function DashboardPage() {
               ))}
             </div>
           )}
-        </section>
-      </div>
+        </motion.div>
+      </section>
     </div>
   );
 }

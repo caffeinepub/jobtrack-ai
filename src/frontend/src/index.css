@@ -4,106 +4,163 @@
 
 @layer base {
   :root {
-    --font-display: "Plus Jakarta Sans";
-    --font-body: "Plus Jakarta Sans";
+    --font-display: "Space Grotesk";
+    --font-body: "Space Grotesk";
     --font-mono: "JetBrains Mono";
-    --radius: 0.375rem;
+    --radius: 2rem;
 
-    --background: 0.98 0.008 250;
-    --foreground: 0.18 0.015 250;
-    --card: 1.0 0.004 250;
-    --card-foreground: 0.18 0.015 250;
-    --popover: 1.0 0.004 250;
-    --popover-foreground: 0.18 0.015 250;
+    /* SpaceX Cinematic — pure hex, no OKLCH */
+    --background: #000000;
+    --foreground: #f0f0fa;
+    --card: #000000;
+    --card-foreground: #f0f0fa;
+    --popover: #000000;
+    --popover-foreground: #f0f0fa;
 
-    --primary: 0.45 0.18 265;
-    --primary-foreground: 0.98 0.005 265;
+    --primary: #f0f0fa;
+    --primary-foreground: #000000;
 
-    --secondary: 0.94 0.01 250;
-    --secondary-foreground: 0.28 0.015 250;
-    --muted: 0.94 0.01 250;
-    --muted-foreground: 0.52 0.012 250;
+    --secondary: #000000;
+    --secondary-foreground: #f0f0fa;
+    --muted: #111116;
+    --muted-foreground: #9898b0;
 
-    --accent: 0.68 0.16 55;
-    --accent-foreground: 0.98 0.005 55;
+    --accent: #f0f0fa;
+    --accent-foreground: #000000;
 
-    --destructive: 0.55 0.22 25;
-    --destructive-foreground: 0.98 0.005 25;
+    --destructive: #c0392b;
+    --destructive-foreground: #f0f0fa;
 
-    --border: 0.88 0.008 250;
-    --input: 0.88 0.008 250;
-    --ring: 0.45 0.18 265;
+    --border: rgba(240, 240, 250, 0.15);
+    --input: rgba(240, 240, 250, 0.15);
+    --ring: #f0f0fa;
 
-    --chart-1: 0.5 0.18 265;
-    --chart-2: 0.65 0.16 195;
-    --chart-3: 0.6 0.15 150;
-    --chart-4: 0.55 0.16 85;
-    --chart-5: 0.5 0.14 25;
+    --chart-1: #f0f0fa;
+    --chart-2: #c8c8e0;
+    --chart-3: #a0a0c8;
+    --chart-4: #7878b0;
+    --chart-5: #505098;
 
-    --sidebar: 0.98 0.008 250;
-    --sidebar-foreground: 0.18 0.015 250;
-    --sidebar-primary: 0.45 0.18 265;
-    --sidebar-primary-foreground: 0.98 0.005 265;
-    --sidebar-accent: 0.94 0.01 250;
-    --sidebar-accent-foreground: 0.28 0.015 250;
-    --sidebar-border: 0.88 0.008 250;
-    --sidebar-ring: 0.45 0.18 265;
+    --sidebar: #000000;
+    --sidebar-foreground: #f0f0fa;
+    --sidebar-primary: #f0f0fa;
+    --sidebar-primary-foreground: #000000;
+    --sidebar-accent: #111116;
+    --sidebar-accent-foreground: #f0f0fa;
+    --sidebar-border: rgba(240, 240, 250, 0.15);
+    --sidebar-ring: #f0f0fa;
+
+    /* SpaceX Typography */
+    --tracking-hero: 0.96px;
+    --tracking-nav: 1.17px;
   }
 
   .dark {
-    --background: 0.13 0.018 250;
-    --foreground: 0.92 0.012 250;
-    --card: 0.16 0.02 250;
-    --card-foreground: 0.92 0.012 250;
-    --popover: 0.2 0.022 250;
-    --popover-foreground: 0.92 0.012 250;
+    --background: #000000;
+    --foreground: #f0f0fa;
+    --card: #000000;
+    --card-foreground: #f0f0fa;
+    --popover: #000000;
+    --popover-foreground: #f0f0fa;
 
-    --primary: 0.68 0.18 265;
-    --primary-foreground: 0.13 0.018 265;
+    --primary: #f0f0fa;
+    --primary-foreground: #000000;
 
-    --secondary: 0.2 0.022 250;
-    --secondary-foreground: 0.82 0.01 250;
-    --muted: 0.2 0.022 250;
-    --muted-foreground: 0.55 0.015 250;
+    --secondary: #000000;
+    --secondary-foreground: #f0f0fa;
+    --muted: #111116;
+    --muted-foreground: #9898b0;
 
-    --accent: 0.72 0.18 55;
-    --accent-foreground: 0.13 0.018 55;
+    --accent: #f0f0fa;
+    --accent-foreground: #000000;
 
-    --destructive: 0.57 0.2 25;
-    --destructive-foreground: 0.92 0.012 25;
+    --destructive: #c0392b;
+    --destructive-foreground: #f0f0fa;
 
-    --border: 0.26 0.02 250;
-    --input: 0.26 0.02 250;
-    --ring: 0.68 0.18 265;
+    --border: rgba(240, 240, 250, 0.15);
+    --input: rgba(240, 240, 250, 0.15);
+    --ring: #f0f0fa;
 
-    --chart-1: 0.7 0.2 265;
-    --chart-2: 0.65 0.18 195;
-    --chart-3: 0.6 0.16 150;
-    --chart-4: 0.62 0.19 85;
-    --chart-5: 0.58 0.18 25;
+    --chart-1: #f0f0fa;
+    --chart-2: #c8c8e0;
+    --chart-3: #a0a0c8;
+    --chart-4: #7878b0;
+    --chart-5: #505098;
 
-    --sidebar: 0.16 0.02 250;
-    --sidebar-foreground: 0.92 0.012 250;
-    --sidebar-primary: 0.68 0.18 265;
-    --sidebar-primary-foreground: 0.13 0.018 265;
-    --sidebar-accent: 0.2 0.022 250;
-    --sidebar-accent-foreground: 0.82 0.01 250;
-    --sidebar-border: 0.26 0.02 250;
-    --sidebar-ring: 0.68 0.18 265;
+    --sidebar: #000000;
+    --sidebar-foreground: #f0f0fa;
+    --sidebar-primary: #f0f0fa;
+    --sidebar-primary-foreground: #000000;
+    --sidebar-accent: #111116;
+    --sidebar-accent-foreground: #f0f0fa;
+    --sidebar-border: rgba(240, 240, 250, 0.15);
+    --sidebar-ring: #f0f0fa;
   }
 
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    background-color: #000000;
+    color: #f0f0fa;
+    font-family: "Space Grotesk", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-hero);
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+  }
+
+  a,
+  button,
+  label,
+  span,
+  p,
+  li,
+  td,
+  th,
+  input,
+  select,
+  textarea {
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    color: rgba(240, 240, 250, 0.35);
+  }
+
+  /* Remove all default focus rings and shadows — SpaceX-style */
+  :focus {
+    outline: 1px solid rgba(240, 240, 250, 0.35);
+    outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
   }
 }
 
 @font-face {
-  font-family: "Plus Jakarta Sans";
-  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+  font-family: "Space Grotesk";
+  src: url("/assets/fonts/SpaceGrotesk.woff2") format("woff2");
   font-display: swap;
+  font-weight: 400 700;
 }
 
 @font-face {
@@ -117,40 +174,140 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  .text-uppercase {
+    text-transform: uppercase;
+  }
+
+  .tracking-hero {
+    letter-spacing: var(--tracking-hero);
+  }
+
+  .tracking-nav {
+    letter-spacing: var(--tracking-nav);
+  }
+
+  /* SpaceX Ghost Button — the ONLY button style */
+  .ghost-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    border-radius: 32px;
+    color: #f0f0fa;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    background-color: rgba(240, 240, 250, 0.1);
+    border: 1px solid rgba(240, 240, 250, 0.35);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+  }
+
+  .ghost-button:hover {
+    background-color: rgba(240, 240, 250, 0.18);
+    border-color: rgba(240, 240, 250, 0.55);
+    color: #f0f0fa;
+  }
+
+  .ghost-button:active {
+    background-color: rgba(240, 240, 250, 0.25);
+  }
+
+  /* Full-bleed 100vh section — every major section is a cinematic scene */
+  .full-bleed-section {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  /* Dark overlay on photography for text legibility */
+  .image-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.5) 50%,
+      rgba(0, 0, 0, 0.65) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Scene content sits on top of overlay */
+  .scene-content {
+    position: relative;
+    z-index: 10;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 4rem 5vw 5rem;
+  }
+
+  /* Fit badge — no card style, just text */
   .fit-badge {
-    @apply px-2 py-1 rounded-sm text-xs font-semibold inline-flex items-center gap-1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #f0f0fa;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    background: transparent;
+    border: none;
   }
 
-  .stage-applied {
-    background-color: oklch(var(--chart-1) / 0.1);
-    color: oklch(var(--chart-1));
-    border: 1px solid oklch(var(--chart-1) / 0.3);
-  }
-
-  .stage-interview {
-    background-color: oklch(var(--chart-2) / 0.1);
-    color: oklch(var(--chart-2));
-    border: 1px solid oklch(var(--chart-2) / 0.3);
-  }
-
-  .stage-offer {
-    background-color: oklch(var(--chart-3) / 0.1);
-    color: oklch(var(--chart-3));
-    border: 1px solid oklch(var(--chart-3) / 0.3);
+  /* Stage labels — monochrome, no color coding */
+  .stage-applied,
+  .stage-interview,
+  .stage-offer,
+  .stage-rejected {
+    color: rgba(240, 240, 250, 0.7);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
   }
 
   .stage-rejected {
-    background-color: oklch(var(--destructive) / 0.1);
-    color: oklch(var(--destructive));
-    border: 1px solid oklch(var(--destructive) / 0.3);
+    color: rgba(240, 240, 250, 0.4);
   }
 
+  /* Stalled indicator — subtle opacity pulse only */
   .stalled-indicator {
     position: absolute;
     inset: 0;
-    border-radius: 0.5rem;
     opacity: 0;
     pointer-events: none;
-    background-color: oklch(var(--accent) / 0.05);
+  }
+
+  /* Nav text style */
+  .nav-text {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    color: #f0f0fa;
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  /* Display / hero text */
+  .display-text {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-hero);
+    line-height: 1.05;
+    color: #f0f0fa;
+    font-family: "Space Grotesk", sans-serif;
   }
 }

@@ -1,35 +1,19 @@
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Link, useLocation } from "@tanstack/react-router";
-import {
-  BarChart3,
-  ChevronLeft,
-  ChevronRight,
-  Kanban,
-  LayoutDashboard,
-  LogOut,
-  Moon,
-  Sparkles,
-  Sun,
-  Table2,
-} from "lucide-react";
-import { useTheme } from "next-themes";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/applications", label: "Applications", icon: Table2 },
-  { to: "/kanban", label: "Pipeline", icon: Kanban },
-  { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/", label: "Dashboard" },
+  { to: "/applications", label: "Applications" },
+  { to: "/kanban", label: "Pipeline" },
+  { to: "/analytics", label: "Analytics" },
 ];
 
 export function Sidebar() {
   const location = useLocation();
   const { sidebarCollapsed, setSidebarCollapsed } = useAppStore();
   const { clear, identity } = useInternetIdentity();
-  const { theme, setTheme } = useTheme();
 
   const principalShort = identity
     ? `${identity.getPrincipal().toString().slice(0, 8)}…`
@@ -39,30 +23,48 @@ export function Sidebar() {
     <aside
       data-ocid="sidebar"
       className={cn(
-        "hidden md:flex flex-col h-screen sticky top-0 bg-sidebar border-r border-sidebar-border transition-smooth shrink-0 z-20",
-        sidebarCollapsed ? "w-16" : "w-60",
+        "hidden md:flex flex-col h-screen sticky top-0 transition-smooth shrink-0 z-20",
+        sidebarCollapsed ? "w-14" : "w-52",
       )}
+      style={{ backgroundColor: "#000000" }}
     >
-      {/* Logo */}
+      {/* Wordmark */}
       <div
         className={cn(
-          "flex items-center gap-2.5 h-16 px-4 border-b border-sidebar-border",
+          "flex items-center h-16 px-5",
           sidebarCollapsed && "justify-center px-0",
         )}
+        style={{ borderBottom: "1px solid rgba(240,240,250,0.08)" }}
       >
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-md">
-          <Sparkles className="w-4 h-4 text-primary-foreground" />
-        </div>
-        {!sidebarCollapsed && (
-          <span className="font-display font-bold text-sm tracking-tight text-sidebar-foreground whitespace-nowrap">
-            JobTrack AI
+        {!sidebarCollapsed ? (
+          <span
+            className="nav-text tracking-nav whitespace-nowrap"
+            style={{
+              color: "#f0f0fa",
+              fontSize: "13px",
+              fontWeight: 700,
+              letterSpacing: "1.17px",
+            }}
+          >
+            JOBTRACK AI
+          </span>
+        ) : (
+          <span
+            style={{
+              color: "#f0f0fa",
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "1.17px",
+            }}
+          >
+            JT
           </span>
         )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-2 space-y-0.5 mt-2">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+      <nav className="flex-1 px-3 space-y-0 mt-4">
+        {NAV_ITEMS.map(({ to, label }) => {
           const isActive =
             to === "/"
               ? location.pathname === "/"
@@ -73,54 +75,41 @@ export function Sidebar() {
               to={to}
               data-ocid={`nav-${label.toLowerCase()}`}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-smooth relative group",
-                isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                "flex items-center px-2 py-2.5 transition-smooth relative",
                 sidebarCollapsed && "justify-center px-0",
               )}
+              style={{
+                fontSize: "13px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "1.17px",
+                color: isActive ? "#f0f0fa" : "rgba(240,240,250,0.45)",
+              }}
             >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-primary" />
+              {isActive && !sidebarCollapsed && (
+                <span
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-4"
+                  style={{ backgroundColor: "#f0f0fa" }}
+                />
               )}
-              <Icon className="w-4 h-4 shrink-0" />
-              {!sidebarCollapsed && <span>{label}</span>}
-              {sidebarCollapsed && (
-                <div className="absolute left-full ml-3 px-2 py-1 rounded-md bg-popover border border-border text-popover-foreground text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-smooth z-50 shadow-md">
-                  {label}
-                </div>
+              {!sidebarCollapsed ? (
+                <span className={cn(isActive && "pl-3")}>{label}</span>
+              ) : (
+                <span style={{ fontSize: "10px" }}>{label.slice(0, 2)}</span>
               )}
             </Link>
           );
         })}
       </nav>
 
-      <Separator className="bg-sidebar-border" />
-
       {/* Bottom actions */}
-      <div className="p-2 space-y-1 pb-4">
-        {/* Theme toggle */}
-        <button
-          type="button"
-          data-ocid="theme-toggle"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className={cn(
-            "flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition-smooth",
-            "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-            sidebarCollapsed && "justify-center px-0",
-          )}
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <Sun className="w-4 h-4 shrink-0" />
-          ) : (
-            <Moon className="w-4 h-4 shrink-0" />
-          )}
-          {!sidebarCollapsed && (
-            <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-          )}
-        </button>
-
+      <div
+        className="px-3 pb-6 space-y-1"
+        style={{
+          borderTop: "1px solid rgba(240,240,250,0.08)",
+          paddingTop: "1rem",
+        }}
+      >
         {/* User + logout */}
         {identity && (
           <button
@@ -128,15 +117,35 @@ export function Sidebar() {
             data-ocid="logout-btn"
             onClick={() => clear()}
             className={cn(
-              "flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition-smooth",
-              "text-sidebar-foreground/60 hover:text-destructive hover:bg-destructive/10",
+              "flex items-center w-full px-2 py-2.5 transition-smooth",
               sidebarCollapsed && "justify-center px-0",
             )}
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "1.17px",
+              color: "rgba(240,240,250,0.4)",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+            }}
             aria-label="Log out"
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color =
+                "rgba(240,240,250,0.8)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color =
+                "rgba(240,240,250,0.4)";
+            }}
           >
-            <LogOut className="w-4 h-4 shrink-0" />
-            {!sidebarCollapsed && (
-              <span className="truncate min-w-0">{principalShort}</span>
+            {!sidebarCollapsed ? (
+              <span className="truncate min-w-0">
+                {principalShort} · SIGN OUT
+              </span>
+            ) : (
+              <span>→</span>
             )}
           </button>
         )}
@@ -147,20 +156,30 @@ export function Sidebar() {
           data-ocid="sidebar-collapse"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className={cn(
-            "flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm transition-smooth",
-            "text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+            "flex items-center w-full px-2 py-2 transition-smooth",
             sidebarCollapsed && "justify-center px-0",
           )}
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "1.17px",
+            color: "rgba(240,240,250,0.25)",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color =
+              "rgba(240,240,250,0.6)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color =
+              "rgba(240,240,250,0.25)";
+          }}
         >
-          {sidebarCollapsed ? (
-            <ChevronRight className="w-4 h-4 shrink-0" />
-          ) : (
-            <>
-              <ChevronLeft className="w-4 h-4 shrink-0" />
-              <span>Collapse</span>
-            </>
-          )}
+          {!sidebarCollapsed ? <span>← Collapse</span> : <span>→</span>}
         </button>
       </div>
     </aside>

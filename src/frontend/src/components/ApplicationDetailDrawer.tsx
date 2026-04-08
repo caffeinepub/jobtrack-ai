@@ -1,23 +1,16 @@
-import { StatusBadge } from "@/components/StatusBadge";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useDeleteApplication,
   useUpdateApplicationStatus,
 } from "@/hooks/useApplications";
-import { cn, daysSince, formatDate } from "@/lib/utils";
+import { daysSince, formatDate } from "@/lib/utils";
 import type { Application, ApplicationStatus } from "@/types";
 import {
-  Building2,
   Calendar,
-  Clock,
   ExternalLink,
   MapPin,
   Sparkles,
-  Tag,
-  Trash2,
   TrendingUp,
   X,
 } from "lucide-react";
@@ -37,87 +30,75 @@ const TIMELINE_STATUSES: ApplicationStatus[] = [
   "Rejected",
 ];
 
-function FitScoreRing({ score }: { score: number }) {
-  const radius = 28;
-  const circumference = 2 * Math.PI * radius;
-  const progress = circumference - (score / 100) * circumference;
-  const color =
-    score >= 85
-      ? "oklch(var(--chart-3))"
-      : score >= 70
-        ? "oklch(var(--chart-2))"
-        : "oklch(var(--chart-5))";
-
+// Fit score as a simple numeric display — no ring, no color
+function FitScoreDisplay({ score }: { score: number }) {
   return (
-    <div className="relative w-20 h-20 flex-shrink-0">
-      <svg
-        className="w-full h-full -rotate-90"
-        viewBox="0 0 72 72"
-        role="img"
-        aria-label={`Fit score ${score} out of 100`}
+    <div className="flex flex-col">
+      <span
+        className="display-text"
+        style={{
+          fontSize: "2.5rem",
+          lineHeight: 1,
+          color: "#f0f0fa",
+          opacity: score >= 85 ? 1 : score >= 70 ? 0.7 : 0.45,
+        }}
       >
-        <circle
-          cx="36"
-          cy="36"
-          r={radius}
-          fill="none"
-          stroke="oklch(var(--border))"
-          strokeWidth="5"
-        />
-        <circle
-          cx="36"
-          cy="36"
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="5"
-          strokeDasharray={circumference}
-          strokeDashoffset={progress}
-          strokeLinecap="round"
-          aria-label={`Fit score: ${score}`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-base font-bold text-foreground">{score}</span>
-        <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
-          Fit
-        </span>
-      </div>
+        {score}
+      </span>
+      <span
+        className="nav-text"
+        style={{ fontSize: 10, opacity: 0.4, marginTop: 4 }}
+      >
+        Fit Score
+      </span>
     </div>
   );
 }
 
-function AiSuggestionCard({ app }: { app: Application }) {
+function AiSuggestion({ app }: { app: Application }) {
   const days = daysSince(app.updatedAt);
   const isStalled = days > 7 && app.status === "Applied";
-  const isInterview = app.status === "Interviewing";
 
-  let suggestion = "";
+  let text = "";
   if (isStalled) {
-    suggestion = `No update in ${days} days. Consider sending a brief follow-up to the hiring team to express continued interest.`;
-  } else if (isInterview) {
-    suggestion =
-      "You're in interview stage — prepare STAR stories for behavioral questions and research recent company news.";
+    text = `No update in ${days} days. Consider sending a brief follow-up to express continued interest.`;
+  } else if (app.status === "Interviewing") {
+    text =
+      "In interview stage — prepare STAR stories and research recent company news.";
   } else if (app.status === "Offer") {
-    suggestion =
-      "Congratulations on the offer! Research market rates and prepare to negotiate — most offers have 10–20% flexibility.";
+    text =
+      "Congratulations on the offer. Research market rates and prepare to negotiate — most offers have 10–20% flexibility.";
   } else if (app.fitScore && app.fitScore >= 85) {
-    suggestion =
-      "High fit score! Prioritize this application and tailor your cover letter to highlight your most relevant experience.";
+    text =
+      "High fit score. Prioritize this application and tailor your cover letter to highlight relevant experience.";
   } else {
-    suggestion =
-      "Keep your application materials updated and follow up if you haven't heard back within 2 weeks.";
+    text =
+      "Keep materials updated and follow up if you haven't heard back within 2 weeks.";
   }
 
   return (
-    <div className="rounded-xl border border-[oklch(var(--primary)/0.2)] bg-[oklch(var(--primary)/0.05)] p-4 space-y-2">
-      <div className="flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
-        <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+    <div
+      style={{
+        borderLeft: "1px solid rgba(240,240,250,0.2)",
+        paddingLeft: 16,
+        marginTop: 4,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles
+          className="w-3 h-3"
+          style={{ color: "rgba(240,240,250,0.5)", flexShrink: 0 }}
+        />
+        <span className="nav-text" style={{ fontSize: 10, opacity: 0.5 }}>
           AI Suggestion
         </span>
       </div>
-      <p className="text-sm text-foreground leading-relaxed">{suggestion}</p>
+      <p
+        className="nav-text"
+        style={{ fontWeight: 400, fontSize: 12, opacity: 0.7, lineHeight: 1.7 }}
+      >
+        {text}
+      </p>
     </div>
   );
 }
@@ -146,121 +127,181 @@ export function ApplicationDetailDrawer({
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — blurred photography */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-foreground/10 backdrop-blur-sm z-40"
+            transition={{ duration: 0.25 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.4)",
+              backdropFilter: "blur(2px)",
+              zIndex: 40,
+            }}
             onClick={onClose}
           />
 
-          {/* Drawer */}
+          {/* Drawer — dark semi-transparent panel */}
           <motion.div
             key="drawer"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className="fixed top-0 right-0 h-full w-full max-w-[480px] bg-card border-l border-border shadow-2xl z-50 flex flex-col"
+            style={{
+              position: "fixed",
+              top: 0,
+              right: 0,
+              height: "100%",
+              width: "100%",
+              maxWidth: 480,
+              background: "rgba(0,0,0,0.88)",
+              backdropFilter: "blur(20px)",
+              borderLeft: "1px solid rgba(240,240,250,0.12)",
+              zIndex: 50,
+              display: "flex",
+              flexDirection: "column",
+            }}
             data-ocid="detail-drawer"
           >
             {/* Header */}
-            <div className="flex items-start justify-between p-6 border-b border-border">
-              <div className="space-y-1 min-w-0 flex-1 pr-4">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-lg font-semibold text-foreground truncate">
-                    {application?.jobTitle ?? <Skeleton className="h-5 w-40" />}
-                  </h2>
-                  {application?.fitScore && application.fitScore >= 85 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[oklch(var(--accent)/0.15)] text-[oklch(var(--accent))] border border-[oklch(var(--accent)/0.3)]">
-                      <Sparkles className="w-2.5 h-2.5" />
-                      High Potential
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>{application?.company}</span>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="flex-shrink-0 -mr-2 -mt-2"
-                aria-label="Close drawer"
-                data-ocid="drawer-close"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {application && (
-                <>
-                  {/* Hero row: fit score + status + quick meta */}
-                  <div className="flex items-start gap-4">
-                    {application.fitScore !== undefined && (
-                      <FitScoreRing score={application.fitScore} />
+            <div
+              style={{
+                padding: "28px 32px 24px",
+                borderBottom: "1px solid rgba(240,240,250,0.1)",
+                flexShrink: 0,
+              }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h2 className="display-text" style={{ fontSize: "1.5rem" }}>
+                    {application?.jobTitle ?? (
+                      <Skeleton
+                        className="h-6 w-48"
+                        style={{ background: "rgba(240,240,250,0.08)" }}
+                      />
                     )}
-                    <div className="flex-1 space-y-3 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <StatusBadge status={application.status} />
-                        <span className="text-xs text-muted-foreground">
-                          {daysSince(application.updatedAt)} days ago
+                  </h2>
+                  <p
+                    className="nav-text mt-1"
+                    style={{ fontWeight: 400, opacity: 0.5, fontSize: 12 }}
+                  >
+                    {application?.company}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="ghost-button flex-shrink-0"
+                  style={{
+                    borderRadius: "50%",
+                    padding: 0,
+                    width: 36,
+                    height: 36,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginTop: -4,
+                  }}
+                  aria-label="Close drawer"
+                  data-ocid="drawer-close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Fit score + meta row */}
+              {application && (
+                <div className="flex items-end gap-8 mt-6">
+                  {application.fitScore !== undefined && (
+                    <FitScoreDisplay score={application.fitScore} />
+                  )}
+                  <div className="flex flex-col gap-2">
+                    {application.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin
+                          className="w-3 h-3"
+                          style={{
+                            color: "rgba(240,240,250,0.35)",
+                            flexShrink: 0,
+                          }}
+                        />
+                        <span
+                          className="nav-text"
+                          style={{
+                            fontWeight: 400,
+                            fontSize: 11,
+                            opacity: 0.55,
+                          }}
+                        >
+                          {application.location}
+                          {application.remote && " · Remote"}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
-                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span className="truncate">
-                            {application.location}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span>{formatDate(application.appliedAt)}</span>
-                        </div>
-                        {application.salary && (
-                          <div className="flex items-center gap-1.5 text-muted-foreground col-span-2">
-                            <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span>{application.salary}</span>
-                          </div>
-                        )}
-                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Calendar
+                        className="w-3 h-3"
+                        style={{
+                          color: "rgba(240,240,250,0.35)",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span
+                        className="nav-text"
+                        style={{ fontWeight: 400, fontSize: 11, opacity: 0.55 }}
+                      >
+                        Applied {formatDate(application.appliedAt)}
+                      </span>
                     </div>
+                    {application.salary && (
+                      <div className="flex items-center gap-2">
+                        <TrendingUp
+                          className="w-3 h-3"
+                          style={{
+                            color: "rgba(240,240,250,0.35)",
+                            flexShrink: 0,
+                          }}
+                        />
+                        <span
+                          className="nav-text"
+                          style={{
+                            fontWeight: 400,
+                            fontSize: 11,
+                            opacity: 0.55,
+                          }}
+                        >
+                          {application.salary}
+                        </span>
+                      </div>
+                    )}
                   </div>
+                </div>
+              )}
+            </div>
 
+            {/* Body */}
+            <div
+              className="flex-1 overflow-y-auto"
+              style={{ padding: "28px 32px" }}
+            >
+              {application && (
+                <div className="flex flex-col gap-8">
                   {/* AI Suggestion */}
-                  <AiSuggestionCard app={application} />
+                  <AiSuggestion app={application} />
 
-                  {/* Job URL */}
-                  {application.url && (
-                    <a
-                      href={application.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-                      data-ocid="job-url-link"
+                  {/* Pipeline timeline — clickable stage markers */}
+                  <div>
+                    <p
+                      className="nav-text mb-4"
+                      style={{ fontSize: 10, opacity: 0.4 }}
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      View Job Posting
-                    </a>
-                  )}
-
-                  <Separator />
-
-                  {/* Timeline */}
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5" />
                       Pipeline Stage
-                    </h3>
-                    <div className="flex items-center gap-1">
+                    </p>
+                    <div className="flex items-stretch gap-0">
                       {TIMELINE_STATUSES.map((s, i) => {
                         const statusOrder = TIMELINE_STATUSES.indexOf(
                           application.status,
@@ -269,32 +310,38 @@ export function ApplicationDetailDrawer({
                         const isCurrent = s === application.status;
                         return (
                           <button
-                            type="button"
                             key={s}
+                            type="button"
                             onClick={() => handleStatusChange(s)}
-                            className={cn(
-                              "flex-1 flex flex-col items-center gap-1.5 group",
-                              "transition-smooth",
-                            )}
+                            className="flex-1 flex flex-col items-center gap-2 transition-smooth"
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: "4px 4px",
+                            }}
                             data-ocid={`timeline-stage-${s.toLowerCase()}`}
                           >
                             <div
-                              className={cn(
-                                "w-full h-1.5 rounded-full transition-smooth",
-                                isPast ? "bg-primary" : "bg-muted",
-                                isCurrent &&
-                                  "ring-2 ring-primary ring-offset-1 ring-offset-card",
-                              )}
+                              style={{
+                                width: "100%",
+                                height: 2,
+                                background: isPast
+                                  ? isCurrent
+                                    ? "rgba(240,240,250,0.9)"
+                                    : "rgba(240,240,250,0.45)"
+                                  : "rgba(240,240,250,0.12)",
+                                borderRadius: 2,
+                                transition: "background 0.3s ease",
+                              }}
                             />
                             <span
-                              className={cn(
-                                "text-[9px] font-medium uppercase tracking-wide",
-                                isCurrent
-                                  ? "text-primary"
-                                  : isPast
-                                    ? "text-foreground/70"
-                                    : "text-muted-foreground",
-                              )}
+                              className="nav-text"
+                              style={{
+                                fontSize: 9,
+                                opacity: isCurrent ? 1 : isPast ? 0.5 : 0.25,
+                                letterSpacing: "var(--tracking-nav)",
+                              }}
                             >
                               {s}
                             </span>
@@ -304,19 +351,66 @@ export function ApplicationDetailDrawer({
                     </div>
                   </div>
 
-                  <Separator />
+                  {/* Job URL */}
+                  {application.url && (
+                    <a
+                      href={application.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 transition-smooth"
+                      style={{
+                        color: "#f0f0fa",
+                        opacity: 0.55,
+                        textDecoration: "none",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.opacity = "1";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.opacity = "0.55";
+                      }}
+                      data-ocid="job-url-link"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span
+                        className="nav-text"
+                        style={{ fontSize: 11, fontWeight: 400 }}
+                      >
+                        View Job Posting
+                      </span>
+                    </a>
+                  )}
+
+                  {/* Divider */}
+                  <div
+                    style={{ height: 1, background: "rgba(240,240,250,0.08)" }}
+                  />
 
                   {/* Notes */}
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <div>
+                    <p
+                      className="nav-text mb-3"
+                      style={{ fontSize: 10, opacity: 0.4 }}
+                    >
                       Notes
-                    </h3>
+                    </p>
                     {application.notes ? (
-                      <p className="text-sm text-foreground leading-relaxed">
+                      <p
+                        className="nav-text"
+                        style={{
+                          fontWeight: 400,
+                          fontSize: 13,
+                          opacity: 0.7,
+                          lineHeight: 1.8,
+                        }}
+                      >
                         {application.notes}
                       </p>
                     ) : (
-                      <p className="text-sm text-muted-foreground italic">
+                      <p
+                        className="nav-text"
+                        style={{ fontWeight: 400, fontSize: 12, opacity: 0.3 }}
+                      >
                         No notes added yet.
                       </p>
                     )}
@@ -324,80 +418,124 @@ export function ApplicationDetailDrawer({
 
                   {/* Tags */}
                   {application.tags.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                        <Tag className="w-3.5 h-3.5" />
+                    <div>
+                      <p
+                        className="nav-text mb-3"
+                        style={{ fontSize: 10, opacity: 0.4 }}
+                      >
                         Tags
-                      </h3>
-                      <div className="flex flex-wrap gap-1.5">
+                      </p>
+                      <div className="flex flex-wrap gap-2">
                         {application.tags.map((tag) => (
-                          <Badge
+                          <span
                             key={tag}
-                            variant="secondary"
-                            className="text-xs"
+                            className="nav-text"
+                            style={{
+                              fontSize: 10,
+                              border: "1px solid rgba(240,240,250,0.2)",
+                              borderRadius: 32,
+                              padding: "3px 10px",
+                              opacity: 0.65,
+                            }}
                           >
                             {tag}
-                          </Badge>
+                          </span>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Meta */}
-                  <div className="rounded-lg bg-muted/40 p-4 space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Source</span>
-                      <span className="text-foreground font-medium">
-                        {application.source}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Job Type</span>
-                      <span className="text-foreground font-medium">
-                        {application.jobType}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Remote</span>
-                      <span className="text-foreground font-medium">
-                        {application.remote ? "Yes" : "No"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        Last Updated
-                      </span>
-                      <span className="text-foreground font-medium">
-                        {formatDate(application.updatedAt)}
-                      </span>
+                  {/* Meta — plain text grid, no panel */}
+                  <div>
+                    <p
+                      className="nav-text mb-3"
+                      style={{ fontSize: 10, opacity: 0.4 }}
+                    >
+                      Details
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {[
+                        { label: "Source", value: application.source },
+                        { label: "Job Type", value: application.jobType },
+                        {
+                          label: "Remote",
+                          value: application.remote ? "Yes" : "No",
+                        },
+                        {
+                          label: "Last Updated",
+                          value: formatDate(application.updatedAt),
+                        },
+                      ].map(({ label, value }) => (
+                        <div
+                          key={label}
+                          className="flex justify-between items-baseline"
+                        >
+                          <span
+                            className="nav-text"
+                            style={{
+                              fontSize: 11,
+                              opacity: 0.35,
+                              fontWeight: 400,
+                            }}
+                          >
+                            {label}
+                          </span>
+                          <span
+                            className="nav-text"
+                            style={{
+                              fontSize: 11,
+                              opacity: 0.7,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {value}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
 
             {/* Footer actions */}
-            <div className="p-4 border-t border-border flex items-center gap-3">
+            <div
+              style={{
+                padding: "20px 32px",
+                borderTop: "1px solid rgba(240,240,250,0.1)",
+                flexShrink: 0,
+                display: "flex",
+                gap: 12,
+              }}
+            >
               {onEdit && application && (
-                <Button
-                  variant="outline"
-                  className="flex-1"
+                <button
+                  type="button"
+                  className="ghost-button flex-1"
                   onClick={() => onEdit(application)}
                   data-ocid="drawer-edit-btn"
                 >
                   Edit Application
-                </Button>
+                </button>
               )}
-              <Button
-                variant="destructive"
-                size="icon"
+              <button
+                type="button"
+                className="ghost-button"
+                style={{
+                  borderColor: "rgba(192,57,43,0.4)",
+                  opacity: deleteMutation.isPending ? 0.5 : 1,
+                  minWidth: 48,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
                 aria-label="Delete application"
                 data-ocid="drawer-delete-btn"
               >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+                {deleteMutation.isPending ? "…" : "Delete"}
+              </button>
             </div>
           </motion.div>
         </>

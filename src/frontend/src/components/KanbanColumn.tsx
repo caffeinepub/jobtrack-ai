@@ -9,87 +9,90 @@ import {
 interface Props {
   id: ApplicationStatus;
   label: string;
-  color: string;
-  headerBg: string;
-  accent: string;
   items: Application[];
-  isOver: boolean;
 }
 
-const COUNT_COLORS: Record<string, string> = {
-  blue: "bg-primary/10 text-primary",
-  purple: "bg-accent/10 text-accent",
-  green: "bg-chart-3/10 text-chart-3",
-  red: "bg-destructive/10 text-destructive",
-  gray: "bg-muted text-muted-foreground",
-};
-
-const DOT_COLORS: Record<string, string> = {
-  blue: "bg-primary",
-  purple: "bg-accent",
-  green: "bg-chart-3",
-  red: "bg-destructive",
-  gray: "bg-muted-foreground/40",
-};
-
-export function KanbanColumn({
-  id,
-  label,
-  color,
-  headerBg,
-  accent,
-  items,
-}: Props) {
+export function KanbanColumn({ id, label, items }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   const itemIds = items.map((a) => a.id);
 
   return (
     <div
-      className="flex flex-col w-72 flex-shrink-0 rounded-xl border border-border overflow-hidden bg-card"
+      className="flex flex-col w-64 flex-shrink-0"
       data-ocid={`kanban-column-${id.toLowerCase()}`}
       style={{ minHeight: 0 }}
     >
-      {/* Column Header */}
+      {/* Column Header — no background, only bottom border */}
       <div
-        className={`flex items-center gap-2.5 px-3.5 py-3 border-b border-border flex-shrink-0 ${headerBg}`}
+        className="flex items-baseline justify-between pb-3 flex-shrink-0"
+        style={{ borderBottom: "1px solid rgba(240,240,250,0.15)" }}
       >
         <span
-          className={`w-2 h-2 rounded-full flex-shrink-0 ${DOT_COLORS[color]}`}
-        />
-        <span className="font-display font-semibold text-sm text-foreground flex-1 truncate">
+          style={{
+            fontFamily: "Space Grotesk, sans-serif",
+            fontWeight: 700,
+            fontSize: "24px",
+            textTransform: "uppercase",
+            letterSpacing: "0.96px",
+            color: "#f0f0fa",
+            lineHeight: 1.1,
+          }}
+        >
           {label}
         </span>
         <span
-          className={`text-xs font-semibold px-2 py-0.5 rounded-full tabular-nums ${COUNT_COLORS[color]}`}
+          style={{
+            fontFamily: "Space Grotesk, sans-serif",
+            fontWeight: 700,
+            fontSize: "12px",
+            textTransform: "uppercase",
+            letterSpacing: "1.17px",
+            color: "rgba(240,240,250,0.45)",
+          }}
         >
           {items.length}
         </span>
       </div>
 
-      {/* Cards list */}
+      {/* Cards list — transparent background */}
       <div
         ref={setNodeRef}
-        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-2 transition-colors duration-200 ${
-          isOver ? "bg-primary/5" : ""
-        }`}
-        style={{ maxHeight: "calc(100vh - 220px)" }}
+        className="flex-1 overflow-y-auto pt-3 flex flex-col gap-2"
+        style={{
+          maxHeight: "calc(100vh - 260px)",
+          transition: "background 0.2s",
+          background: isOver ? "rgba(240,240,250,0.03)" : "transparent",
+        }}
       >
         <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
           {items.map((app) => (
-            <KanbanCard key={app.id} app={app} accent={accent} />
+            <KanbanCard key={app.id} app={app} />
           ))}
         </SortableContext>
 
         {/* Empty state */}
         {items.length === 0 && (
           <div
-            className={`flex-1 min-h-24 rounded-lg border-2 border-dashed border-border/50 flex items-center justify-center transition-colors duration-200 ${
-              isOver ? "border-primary/40 bg-primary/5" : ""
-            }`}
+            className="flex-1 min-h-20 flex items-center justify-center"
+            style={{
+              border: "1px dashed rgba(240,240,250,0.12)",
+              borderRadius: "4px",
+            }}
             data-ocid={`kanban-empty-${id.toLowerCase()}`}
           >
-            <span className="text-xs text-muted-foreground">Drop here</span>
+            <span
+              style={{
+                fontFamily: "Space Grotesk, sans-serif",
+                fontSize: "10px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "1.17px",
+                color: "rgba(240,240,250,0.25)",
+              }}
+            >
+              DROP HERE
+            </span>
           </div>
         )}
       </div>

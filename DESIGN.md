@@ -1,78 +1,81 @@
-# Design Brief
+# JobTrack AI — SpaceX Cinematic Design System
 
 ## Direction
 
-JobTrack AI — Premium job application tracker with luxury minimal productivity design, dark-mode primary with sophisticated indigo primary and warm amber accents for pipeline visualization.
+Industrial aerospace minimalism. Pure black void (#000000) with spectral white text (#f0f0fa). Full-bleed 100vh cinematic photography backgrounds (rockets, space, Earth, Mars). Ghost buttons only. Zero cards, panels, shadows, borders, decorative elements. Interface disappears into photography.
 
 ## Tone
 
-Refined, purposeful, confident. No decoration; every element earns visual hierarchy through typography, spacing, and intentional color. Smooth transitions convey premium polish without playfulness.
-
-## Differentiation
-
-Color-coded Kanban pipeline stages with AI confidence rings on Job Fit Score badges and subtle stall-detection aging indicators for applications aged 14+ days.
+Uncompromising minimalism. Every pixel serves the cinematic aerospace aesthetic. Typography + photography only. All text UPPERCASE with geometric sans-serif (D-DIN / Space Grotesk).
 
 ## Color Palette
 
-| Token           | Light (L C H)      | Dark (L C H)      | Role                          |
-| --------------- | ------------------ | ----------------- | ----------------------------- |
-| background      | 0.98 0.008 250     | 0.13 0.018 250    | Page base surface              |
-| foreground      | 0.18 0.015 250     | 0.92 0.012 250    | Primary text/content           |
-| card            | 1.0 0.004 250      | 0.16 0.02 250     | Elevated content surfaces      |
-| primary         | 0.45 0.18 265      | 0.68 0.18 265     | CTA buttons, active states     |
-| accent          | 0.68 0.16 55       | 0.72 0.18 55      | Warm highlight (offer stage)   |
-| destructive     | 0.55 0.22 25       | 0.57 0.2 25       | Rejected applications          |
-| chart-1         | 0.5 0.18 265       | 0.7 0.2 265       | Applied stage (indigo)         |
-| chart-2         | 0.65 0.16 195      | 0.65 0.18 195     | Interview stage (cyan)         |
-| chart-3         | 0.6 0.15 150       | 0.6 0.16 150      | Offer stage (green)            |
-| chart-4         | 0.55 0.16 85       | 0.62 0.19 85      | Analytics metric (amber)       |
-| muted           | 0.94 0.01 250      | 0.2 0.022 250     | Secondary surfaces, borders    |
+| Token | OKLCH | Purpose |
+|-------|-------|---------|
+| background | 0.0 0.0 0 | Space black void |
+| foreground | 0.96 0.002 250 | Spectral white text |
+| accent | 0.96 0.002 250 | Ghost button text/border |
+| muted | 0.15 0.001 250 | Secondary hierarchy |
+| destructive | 0.55 0.22 25 | Error state only |
 
 ## Typography
 
-- Display: Plus Jakarta Sans — headings, form labels, hero text
-- Body: Plus Jakarta Sans — paragraphs, table content, UI labels
-- Mono: JetBrains Mono — reference text, confidence scores
-- Scale: Hero `text-3xl font-bold tracking-tight`, H2 `text-xl font-semibold tracking-tight`, Label `text-sm font-semibold uppercase tracking-widest`, Body `text-base leading-relaxed`
+| Scale | Font | Size | Weight | Tracking | Case |
+|-------|------|------|--------|----------|------|
+| Hero/Display | Space Grotesk | 48px+ | 700 | 0.96px | UPPERCASE |
+| Nav/Labels | Space Grotesk | 13px | 700 | 1.17px | UPPERCASE |
+| Body | Space Grotesk | 16px | 400 | 1.17px | UPPERCASE |
+| Captions | Space Grotesk | 12px | 400 | 1.17px | UPPERCASE |
 
 ## Elevation & Depth
 
-Subtle shadow hierarchy: minimal shadows on light mode (xs: 0.05, sm: 0.1), elevated shadows on dark mode (md: 0.12, lg: 0.15) to distinguish cards from background. Borders replace heavy shadows.
+NO SHADOWS. Depth through composition only: full-bleed photography + dark overlay + left-aligned uppercase text overlays. Zero borders, zero decoration.
 
 ## Structural Zones
 
-| Zone        | Background         | Border         | Notes                           |
-| ----------- | ------------------ | -------------- | ------------------------------- |
-| Header      | card               | border/muted   | Sticky nav with app title       |
-| Sidebar     | sidebar (0.98/0.16)| sidebar-border | Navigation, active highlight    |
-| Content     | background         | —              | Alternating card/muted sections |
-| Card (list) | card               | border         | 6px radius, transition-smooth   |
-| Footer      | muted/5 opacity    | border-t       | Copyright, minimal              |
+| Zone | Treatment | Content |
+|------|-----------|---------|
+| Page Sections | 100vh full-bleed aerospace photography + rgba(0,0,0,0.5) overlay | Left-aligned uppercase text, generous padding |
+| Navigation | Transparent overlay on photography, tracked uppercase | SpaceX wordmark style, ghost buttons only |
+| Content | Direct text overlay on photography, NO containers | Bold uppercase typography, minimal density |
+| CTAs | Ghost buttons only | rgba(240,240,250,0.1) bg, 1px rgba(240,240,250,0.35) border, 32px radius |
 
 ## Spacing & Rhythm
 
-6px base radius, 16px micro-spacing (gaps, padding), 24px macro-spacing (section gaps), 32px page padding. Content density: 12px card padding (compact), 16px for section headings.
+Full-viewport 100vh pacing between sections. Left-aligned text with generous padding (32px minimum). Text bleeds to viewport edges. No containers, no card padding, no micro-spacing hierarchy.
 
 ## Component Patterns
 
-- **Buttons**: Rounded-sm (4px), primary=indigo-600 dark/0.45 light, hover=brightness-110, disabled=opacity-50
-- **Cards**: 6px radius, bg-card, 1px solid border-border, shadow-md on dark
-- **Badges**: `fit-badge` + stage classes (stage-applied, stage-interview, stage-offer, stage-rejected) with 10% background opacity, colored border 30% opacity
-- **Form inputs**: 6px radius, bg-input, focus=ring-2 ring-primary
+- **Ghost Button**: rgba(240,240,250,0.1) background, 1px solid rgba(240,240,250,0.35) border, 32px border-radius, 18px horizontal padding, UPPERCASE tracked text, hover: +5% opacity
+- **Typography**: ALL UPPERCASE, 0.96px letter-spacing (hero), 1.17px (body/nav), Space Grotesk geometric sans-serif
+- **NO Cards, NO Badges, NO Borders, NO Shadows, NO Decorative Icons**
 
 ## Motion
 
-- **Entrance**: fade-in 0.3s ease-out (page load), slide-up 0.4s ease-out (list items)
-- **Hover**: transition-smooth 0.3s, scale-102 shadow-lg on cards, text-primary on links
-- **Decorative**: float-subtle 3s infinite on AI insight cards, pulse on stalled indicators
+- **Entrance**: fade-in (opacity 0 → 1)
+- **Transition**: slide-up between 100vh sections
+- **Hover**: Ghost button background brightens +5%, text emphasis
+- NO DECORATIVE ANIMATIONS. Motion serves navigation only.
+
+## Patterns
+
+- All text UPPERCASE with positive letter-spacing (0.96px hero, 1.17px nav/body)
+- Ghost button: no fill, subtle transparency, 32px rounded, minimal contrast on dark background
+- Full-viewport photography as negative space—interface disappears into image
+- No cards, panels, containers, shadows, borders, decorative icons, badges
+- Vertical 100vh pacing between sections (each section = new cinematic scene)
+- Dark overlay ensures text legibility on all imagery
 
 ## Constraints
 
-- No gradients except as utilities for specific emphasis (hero text only)
-- Maximum 2 font families (Plus Jakarta Sans + JetBrains Mono)
-- Card shadows use OKLCH alpha values, never hard shadows
-- All colors as OKLCH CSS variables, never hex or rgb() literals
+- Pure black (#000000) background ONLY
+- Spectral white (#f0f0fa) text ONLY
+- Space Grotesk font ONLY (geometric sans-serif, no serif fallbacks)
+- ALL TEXT UPPERCASE with positive tracking
+- Ghost buttons are the ONLY interactive element (no solid fills, no colors, no effects)
+- ZERO shadows, zero borders, zero cards, zero containers, zero decorative elements
+- Photography + Typography only — the interface must disappear
 
 ## Signature Detail
 
-AI-powered confidence ring on Job Fit Score badges: circular progress indicator showing 0–100% match, scaled with float-subtle animation to draw attention when score >80%.
+Uncompromising minimalism. The photography IS the whitespace. The interface vanishes into aerospace imagery. Every pixel serves the cinematic experience.

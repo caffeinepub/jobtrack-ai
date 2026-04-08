@@ -1,15 +1,14 @@
 import { Sidebar } from "@/components/Sidebar";
 import { cn } from "@/lib/utils";
 import { Link, Outlet, useLocation } from "@tanstack/react-router";
-import { BarChart3, Kanban, LayoutDashboard, Table2 } from "lucide-react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 
 const BOTTOM_NAV = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/applications", label: "Apps", icon: Table2 },
-  { to: "/kanban", label: "Pipeline", icon: Kanban },
-  { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/", label: "Dashboard" },
+  { to: "/applications", label: "Apps" },
+  { to: "/kanban", label: "Pipeline" },
+  { to: "/analytics", label: "Analytics" },
 ];
 
 export function Layout() {
@@ -17,7 +16,10 @@ export function Layout() {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div
+        className="flex h-screen overflow-hidden"
+        style={{ backgroundColor: "#000000" }}
+      >
         {/* Desktop sidebar */}
         <Sidebar />
 
@@ -31,10 +33,14 @@ export function Layout() {
         {/* Mobile bottom nav */}
         <nav
           data-ocid="mobile-nav"
-          className="md:hidden fixed bottom-0 inset-x-0 bg-card border-t border-border z-30 pb-safe"
+          className="md:hidden fixed bottom-0 inset-x-0 z-30 pb-safe"
+          style={{
+            backgroundColor: "#000000",
+            borderTop: "1px solid rgba(240,240,250,0.15)",
+          }}
         >
           <div className="flex items-center">
-            {BOTTOM_NAV.map(({ to, label, icon: Icon }) => {
+            {BOTTOM_NAV.map(({ to, label }) => {
               const isActive =
                 to === "/"
                   ? location.pathname === "/"
@@ -44,11 +50,13 @@ export function Layout() {
                   key={to}
                   to={to}
                   className={cn(
-                    "flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium transition-smooth",
-                    isActive ? "text-primary" : "text-muted-foreground",
+                    "flex-1 flex flex-col items-center justify-center py-3 nav-text tracking-nav transition-smooth",
+                    isActive
+                      ? "text-foreground"
+                      : "text-foreground/50 hover:text-foreground/80",
                   )}
+                  style={{ fontSize: "10px" }}
                 >
-                  <Icon className="w-5 h-5" />
                   <span>{label}</span>
                 </Link>
               );
@@ -60,10 +68,14 @@ export function Layout() {
       <Toaster
         position="top-right"
         toastOptions={{
-          className: "font-body",
+          className: "font-body nav-text",
           duration: 4000,
+          style: {
+            backgroundColor: "#000000",
+            border: "1px solid rgba(240,240,250,0.35)",
+            color: "#f0f0fa",
+          },
         }}
-        richColors
       />
     </ThemeProvider>
   );

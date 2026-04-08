@@ -18,48 +18,12 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
-const COLUMNS: {
-  id: ApplicationStatus;
-  label: string;
-  color: string;
-  headerBg: string;
-  accent: string;
-}[] = [
-  {
-    id: "Applied",
-    label: "Applied",
-    color: "blue",
-    headerBg: "bg-primary/5",
-    accent: "border-l-primary",
-  },
-  {
-    id: "Interviewing",
-    label: "Interviewing",
-    color: "purple",
-    headerBg: "bg-accent/5",
-    accent: "border-l-accent",
-  },
-  {
-    id: "Offer",
-    label: "Offer",
-    color: "green",
-    headerBg: "bg-chart-3/5",
-    accent: "border-l-chart-3",
-  },
-  {
-    id: "Rejected",
-    label: "Rejected",
-    color: "red",
-    headerBg: "bg-destructive/5",
-    accent: "border-l-destructive",
-  },
-  {
-    id: "Archived",
-    label: "Archived",
-    color: "gray",
-    headerBg: "bg-muted/50",
-    accent: "border-l-muted-foreground/30",
-  },
+const COLUMNS: { id: ApplicationStatus; label: string }[] = [
+  { id: "Applied", label: "APPLIED" },
+  { id: "Interviewing", label: "INTERVIEWING" },
+  { id: "Offer", label: "OFFER" },
+  { id: "Rejected", label: "REJECTED" },
+  { id: "Archived", label: "ARCHIVED" },
 ];
 
 const dropAnimation: DropAnimation = {
@@ -97,7 +61,6 @@ export function KanbanBoard({ applications }: Props) {
       const activeItem = items.find((a) => a.id === active.id);
       if (!activeItem) return;
 
-      // Determine target column (could be a column droppable or a card)
       const overColumn = COLUMNS.find((c) => c.id === over.id);
       const overItem = items.find((a) => a.id === over.id);
       const targetStatus = overColumn?.id ?? overItem?.status;
@@ -128,7 +91,6 @@ export function KanbanBoard({ applications }: Props) {
       const originalApp = applications.find((a) => a.id === active.id);
       const prevStatus = originalApp?.status ?? activeItem.status;
 
-      // Reorder within same column
       if (targetStatus === prevStatus && overItem) {
         setItems((prev) => {
           const colItems = prev.filter((a) => a.status === targetStatus);
@@ -146,7 +108,6 @@ export function KanbanBoard({ applications }: Props) {
 
       if (targetStatus === prevStatus) return;
 
-      // Optimistic update already applied in dragOver; persist to backend
       undoRef.current = { id: active.id as string, prevStatus };
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
 
@@ -154,23 +115,21 @@ export function KanbanBoard({ applications }: Props) {
         { id: active.id as string, status: targetStatus },
         {
           onError: () => {
-            // Rollback
             setItems((prev) =>
               prev.map((a) =>
                 a.id === active.id ? { ...a, status: prevStatus } : a,
               ),
             );
-            toast.error("Failed to update status");
+            toast.error("FAILED TO UPDATE STATUS");
             undoRef.current = null;
           },
         },
       );
 
-      // Show undo toast
-      toast(`Moved to ${targetStatus}`, {
+      toast(`MOVED TO ${targetStatus.toUpperCase()}`, {
         duration: 5000,
         action: {
-          label: "Undo",
+          label: "UNDO",
           onClick: () => {
             if (!undoRef.current) return;
             setItems((prev) =>
@@ -209,26 +168,23 @@ export function KanbanBoard({ applications }: Props) {
       onDragEnd={handleDragEnd}
     >
       <div
-        className="flex gap-4 p-6 h-full overflow-x-auto"
+        className="flex gap-5 px-8 pb-8 h-full overflow-x-auto"
         data-ocid="kanban-board"
+        style={{ alignItems: "flex-start" }}
       >
         {COLUMNS.map((col) => (
           <KanbanColumn
             key={col.id}
             id={col.id}
             label={col.label}
-            color={col.color}
-            headerBg={col.headerBg}
-            accent={col.accent}
             items={columnItems(col.id)}
-            isOver={false}
           />
         ))}
       </div>
       <DragOverlay dropAnimation={dropAnimation}>
         {activeApp ? (
-          <div className="rotate-2 scale-105 opacity-95 pointer-events-none">
-            <KanbanCard app={activeApp} accent="border-l-primary" isDragging />
+          <div className="rotate-1 scale-105 opacity-90 pointer-events-none">
+            <KanbanCard app={activeApp} isDragging />
           </div>
         ) : null}
       </DragOverlay>

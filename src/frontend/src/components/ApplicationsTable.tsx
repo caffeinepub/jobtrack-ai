@@ -1,19 +1,10 @@
 import { ApplicationDetailDrawer } from "@/components/ApplicationDetailDrawer";
-import { StatusBadge } from "@/components/StatusBadge";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useDeleteApplication,
@@ -26,10 +17,8 @@ import {
   ArrowUpDown,
   ChevronDown,
   ChevronUp,
-  Edit3,
   Eye,
   Layers,
-  MoreHorizontal,
   Settings2,
   Sparkles,
   Trash2,
@@ -94,7 +83,6 @@ function sortApplications(apps: Application[], sort: SortState): Application[] {
   return [...apps].sort((a, b) => {
     let va: string | number = "";
     let vb: string | number = "";
-
     switch (sort.key) {
       case "company":
         va = a.company.toLowerCase();
@@ -125,27 +113,36 @@ function sortApplications(apps: Application[], sort: SortState): Application[] {
         vb = b.source.toLowerCase();
         break;
     }
-
     if (va < vb) return sort.dir === "asc" ? -1 : 1;
     if (va > vb) return sort.dir === "asc" ? 1 : -1;
     return 0;
   });
 }
 
-function FitScorePill({ score }: { score: number }) {
-  const color =
-    score >= 85
-      ? "text-[oklch(var(--chart-3))] bg-[oklch(var(--chart-3)/0.1)] border-[oklch(var(--chart-3)/0.25)]"
-      : score >= 70
-        ? "text-[oklch(var(--chart-2))] bg-[oklch(var(--chart-2)/0.1)] border-[oklch(var(--chart-2)/0.25)]"
-        : "text-[oklch(var(--chart-5))] bg-[oklch(var(--chart-5)/0.1)] border-[oklch(var(--chart-5)/0.25)]";
-
+// Ghost status text — no color coding, just uppercase text with opacity
+function StatusText({ status }: { status: ApplicationStatus }) {
+  const opacity =
+    status === "Rejected" ? 0.35 : status === "Archived" ? 0.3 : 0.75;
   return (
     <span
-      className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border",
-        color,
-      )}
+      className="nav-text"
+      style={{ fontSize: 11, opacity, color: "#f0f0fa" }}
+    >
+      {status}
+    </span>
+  );
+}
+
+function FitScoreText({ score }: { score: number }) {
+  return (
+    <span
+      className="nav-text"
+      style={{
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#f0f0fa",
+        opacity: score >= 85 ? 1 : score >= 70 ? 0.7 : 0.45,
+      }}
     >
       {score}
     </span>
@@ -155,75 +152,130 @@ function FitScorePill({ score }: { score: number }) {
 function InlineStatusDropdown({
   appId,
   current,
-}: {
-  appId: string;
-  current: ApplicationStatus;
-}) {
+}: { appId: string; current: ApplicationStatus }) {
   const [open, setOpen] = useState(false);
   const statusMutation = useUpdateApplicationStatus();
-
   return (
-    <Select
-      open={open}
-      onOpenChange={setOpen}
-      value={current}
-      onValueChange={(val) => {
-        statusMutation.mutate({ id: appId, status: val as ApplicationStatus });
-        setOpen(false);
-      }}
-    >
-      <SelectTrigger
-        className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 hover:bg-transparent w-auto gap-1.5"
+    <div className="relative">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className="flex items-center gap-1.5 transition-smooth"
+        style={{
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+        }}
         data-ocid="inline-status-trigger"
         aria-label="Change status"
       >
-        <StatusBadge status={current} />
-        <ChevronDown className="w-3 h-3 text-muted-foreground opacity-60" />
-      </SelectTrigger>
-      <SelectContent align="start" className="min-w-[140px]">
-        {ALL_STATUSES.map((s) => (
-          <SelectItem
-            key={s}
-            value={s}
-            data-ocid={`status-option-${s.toLowerCase()}`}
+        <StatusText status={current} />
+        <ChevronDown
+          className="w-3 h-3"
+          style={{ color: "rgba(240,240,250,0.3)", flexShrink: 0 }}
+        />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-0 mt-1 z-50"
+            style={{
+              background: "rgba(0,0,0,0.9)",
+              border: "1px solid rgba(240,240,250,0.2)",
+              borderRadius: 8,
+              minWidth: 140,
+              backdropFilter: "blur(12px)",
+            }}
           >
-            <StatusBadge status={s} size="sm" />
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+            {ALL_STATUSES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  statusMutation.mutate({ id: appId, status: s });
+                  setOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 transition-smooth nav-text"
+                style={{
+                  background:
+                    s === current ? "rgba(240,240,250,0.08)" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  color: "#f0f0fa",
+                  opacity: s === current ? 1 : 0.6,
+                }}
+                data-ocid={`status-option-${s.toLowerCase()}`}
+              >
+                {s}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
 function ColumnVisibilityPopover() {
   const { columnVisibility, toggleColumn } = useAppStore();
-
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+        <button
+          type="button"
+          className="ghost-button p-2 h-8 w-8"
+          style={{
+            borderRadius: "50%",
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
           aria-label="Toggle column visibility"
           data-ocid="column-visibility-trigger"
         >
           <Settings2 className="w-4 h-4" />
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent
         align="end"
         className="w-48 p-2"
+        style={{
+          background: "rgba(0,0,0,0.92)",
+          border: "1px solid rgba(240,240,250,0.2)",
+          backdropFilter: "blur(16px)",
+        }}
         data-ocid="column-visibility-popover"
       >
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-2">
+        <p
+          className="nav-text px-2 pb-2"
+          style={{ fontSize: 10, opacity: 0.5 }}
+        >
           Columns
         </p>
         {TOGGLE_COLUMNS.map(({ key, label }) => (
           <label
             key={key}
             htmlFor={`col-${key}`}
-            className="flex items-center gap-2.5 px-2 py-1.5 rounded hover:bg-muted/60 cursor-pointer"
+            className="flex items-center gap-2.5 px-2 py-1.5 cursor-pointer transition-smooth"
+            style={{ borderRadius: 6 }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background =
+                "rgba(240,240,250,0.05)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "transparent";
+            }}
           >
             <Checkbox
               id={`col-${key}`}
@@ -231,7 +283,12 @@ function ColumnVisibilityPopover() {
               onCheckedChange={() => toggleColumn(key)}
               data-ocid={`column-toggle-${key}`}
             />
-            <span className="text-sm flex-1">{label}</span>
+            <span
+              className="nav-text"
+              style={{ fontSize: 11, flex: 1, opacity: 0.8 }}
+            >
+              {label}
+            </span>
           </label>
         ))}
       </PopoverContent>
@@ -247,29 +304,41 @@ function EmptyState({ hasSearch }: { hasSearch: boolean }) {
       className="flex flex-col items-center justify-center py-20 px-8 text-center"
       data-ocid="empty-state"
     >
-      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-        <Layers className="w-8 h-8 text-primary/60" />
-      </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">
-        {hasSearch ? "No matching applications" : "No applications yet"}
+      <Layers
+        className="w-12 h-12 mb-6"
+        style={{ color: "rgba(240,240,250,0.2)" }}
+      />
+      <h3
+        className="display-text mb-3"
+        style={{ fontSize: "1.5rem", opacity: 0.8 }}
+      >
+        {hasSearch ? "No Matching Applications" : "No Applications Yet"}
       </h3>
-      <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
+      <p
+        className="nav-text"
+        style={{
+          opacity: 0.4,
+          fontWeight: 400,
+          maxWidth: 320,
+          lineHeight: 1.7,
+          textTransform: "uppercase",
+        }}
+      >
         {hasSearch
-          ? "Try adjusting your search query or clearing some filters to see more results."
-          : "Add your first job application to start tracking your job search journey."}
+          ? "Try adjusting your search query or clearing filters."
+          : "Add your first job application to start tracking your search."}
       </p>
     </motion.div>
   );
 }
 
 function SortIndicator({ colKey, sort }: { colKey: SortKey; sort: SortState }) {
-  if (sort.key !== colKey) {
-    return <ArrowUpDown className="w-3 h-3 opacity-30" />;
-  }
+  if (sort.key !== colKey)
+    return <ArrowUpDown className="w-3 h-3" style={{ opacity: 0.25 }} />;
   return sort.dir === "asc" ? (
-    <ChevronUp className="w-3.5 h-3.5 text-primary" />
+    <ChevronUp className="w-3.5 h-3.5" style={{ color: "#f0f0fa" }} />
   ) : (
-    <ChevronDown className="w-3.5 h-3.5 text-primary" />
+    <ChevronDown className="w-3.5 h-3.5" style={{ color: "#f0f0fa" }} />
   );
 }
 
@@ -287,7 +356,8 @@ function SortableTh({
   return (
     <th
       scope="col"
-      className="text-left px-3 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none whitespace-nowrap"
+      className="text-left px-3 py-3 cursor-pointer select-none whitespace-nowrap"
+      style={{ background: "transparent" }}
       onClick={() => onSort(colKey)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onSort(colKey);
@@ -300,7 +370,10 @@ function SortableTh({
           : "none"
       }
     >
-      <div className="flex items-center gap-1.5">
+      <div
+        className="flex items-center gap-1.5 nav-text"
+        style={{ fontSize: 11 }}
+      >
         {label}
         <SortIndicator colKey={colKey} sort={sort} />
       </div>
@@ -308,17 +381,19 @@ function SortableTh({
   );
 }
 
+// Row divider style
+const ROW_BORDER = "1px solid rgba(240,240,250,0.08)";
+
 export function ApplicationsTable({
   applications,
   isLoading,
-  searchChips = [],
-  onEditApplication,
   page,
   totalPages,
   onPageChange,
   selectedIds,
   onSelectId,
   onSelectAll,
+  onEditApplication,
 }: Props) {
   const { columnVisibility, setSelectedApplication } = useAppStore();
   const deleteMutation = useDeleteApplication();
@@ -358,35 +433,30 @@ export function ApplicationsTable({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Search chips */}
-      <AnimatePresence>
-        {searchChips.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex items-center gap-2 flex-wrap px-4 pb-3"
-          >
-            <span className="text-xs text-muted-foreground">Filters:</span>
-            {searchChips.map((chip) => (
-              <Badge
-                key={`${chip.type}-${chip.label}`}
-                variant="secondary"
-                className="text-xs gap-1 bg-primary/10 text-primary border border-primary/20 rounded-full"
-              >
-                {chip.label}
-              </Badge>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Table wrapper */}
-      <div className="flex-1 overflow-auto rounded-xl border border-border">
-        <table className="w-full text-sm border-collapse">
+      {/* Table wrapper — transparent, no border/card */}
+      <div
+        className="flex-1 overflow-auto"
+        style={{ background: "transparent" }}
+      >
+        <table
+          className="w-full text-sm"
+          style={{ borderCollapse: "collapse", background: "transparent" }}
+        >
           <thead>
-            <tr className="bg-muted/40 border-b border-border sticky top-0 z-10">
-              <th className="w-10 pl-4 pr-2 py-3">
+            <tr
+              style={{
+                borderBottom: "1px solid rgba(240,240,250,0.15)",
+                background: "rgba(0,0,0,0.35)",
+                backdropFilter: "blur(4px)",
+                position: "sticky",
+                top: 0,
+                zIndex: 10,
+              }}
+            >
+              <th
+                className="w-10 pl-4 pr-2 py-3"
+                style={{ background: "transparent" }}
+              >
                 <Checkbox
                   checked={allSelected}
                   onCheckedChange={(checked) => onSelectAll(!!checked)}
@@ -401,7 +471,6 @@ export function ApplicationsTable({
                 sort={sort}
                 onSort={handleSort}
               />
-
               {isVisible("jobTitle") && (
                 <SortableTh
                   colKey="jobTitle"
@@ -410,7 +479,6 @@ export function ApplicationsTable({
                   onSort={handleSort}
                 />
               )}
-
               {isVisible("status") && (
                 <SortableTh
                   colKey="status"
@@ -419,31 +487,30 @@ export function ApplicationsTable({
                   onSort={handleSort}
                 />
               )}
-
               {isVisible("fitScore") && (
                 <SortableTh
                   colKey="fitScore"
-                  label="Fit Score"
+                  label="Fit"
                   sort={sort}
                   onSort={handleSort}
                 />
               )}
-
               {isVisible("appliedAt") && (
                 <SortableTh
                   colKey="appliedAt"
-                  label="Date Applied"
+                  label="Applied"
                   sort={sort}
                   onSort={handleSort}
                 />
               )}
-
               {isVisible("salary") && (
-                <th className="text-left px-3 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                <th
+                  className="text-left px-3 py-3 nav-text whitespace-nowrap"
+                  style={{ fontSize: 11, background: "transparent" }}
+                >
                   Salary
                 </th>
               )}
-
               {isVisible("location") && (
                 <SortableTh
                   colKey="location"
@@ -452,7 +519,6 @@ export function ApplicationsTable({
                   onSort={handleSort}
                 />
               )}
-
               {isVisible("source") && (
                 <SortableTh
                   colKey="source"
@@ -462,7 +528,10 @@ export function ApplicationsTable({
                 />
               )}
 
-              <th className="text-right px-4 py-3">
+              <th
+                className="text-right px-4 py-3"
+                style={{ background: "transparent" }}
+              >
                 <div className="flex items-center justify-end">
                   <ColumnVisibilityPopover />
                 </div>
@@ -474,43 +543,58 @@ export function ApplicationsTable({
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton rows
-                <tr key={i} className="border-b border-border/50">
+                <tr key={i} style={{ borderBottom: ROW_BORDER }}>
                   <td className="pl-4 pr-2 py-4">
                     <Skeleton className="h-4 w-4 rounded" />
                   </td>
                   <td className="px-3 py-4">
-                    <div className="flex items-center gap-2.5">
-                      <Skeleton className="h-8 w-8 rounded-lg" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
+                    <Skeleton
+                      className="h-4 w-24"
+                      style={{ background: "rgba(240,240,250,0.08)" }}
+                    />
                   </td>
                   <td className="px-3 py-4">
-                    <Skeleton className="h-4 w-36" />
+                    <Skeleton
+                      className="h-4 w-36"
+                      style={{ background: "rgba(240,240,250,0.08)" }}
+                    />
                   </td>
                   <td className="px-3 py-4">
-                    <Skeleton className="h-6 w-20 rounded-full" />
+                    <Skeleton
+                      className="h-4 w-20"
+                      style={{ background: "rgba(240,240,250,0.08)" }}
+                    />
                   </td>
                   <td className="px-3 py-4">
-                    <Skeleton className="h-6 w-10 rounded-full" />
+                    <Skeleton
+                      className="h-4 w-10"
+                      style={{ background: "rgba(240,240,250,0.08)" }}
+                    />
                   </td>
                   <td className="px-3 py-4">
-                    <Skeleton className="h-4 w-24" />
+                    <Skeleton
+                      className="h-4 w-24"
+                      style={{ background: "rgba(240,240,250,0.08)" }}
+                    />
                   </td>
                   <td className="px-3 py-4">
-                    <Skeleton className="h-4 w-28" />
+                    <Skeleton
+                      className="h-4 w-20"
+                      style={{ background: "rgba(240,240,250,0.08)" }}
+                    />
                   </td>
                   <td className="px-3 py-4">
-                    <Skeleton className="h-4 w-20" />
-                  </td>
-                  <td className="px-3 py-4">
-                    <Skeleton className="h-4 w-16" />
+                    <Skeleton
+                      className="h-4 w-16"
+                      style={{ background: "rgba(240,240,250,0.08)" }}
+                    />
                   </td>
                   <td className="px-4 py-4" />
                 </tr>
               ))
             ) : sortedApps.length === 0 ? (
               <tr>
-                <td colSpan={10}>
+                <td colSpan={10} style={{ background: "transparent" }}>
                   <EmptyState hasSearch={false} />
                 </td>
               </tr>
@@ -532,14 +616,16 @@ export function ApplicationsTable({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ delay: Math.min(index * 0.04, 0.2) }}
-                      className={cn(
-                        "border-b border-border/50 cursor-pointer transition-colors duration-150",
-                        isSelected
-                          ? "bg-primary/5"
+                      style={{
+                        borderBottom: ROW_BORDER,
+                        cursor: "pointer",
+                        background: isSelected
+                          ? "rgba(240,240,250,0.06)"
                           : isHovered
-                            ? "bg-muted/50"
-                            : "bg-transparent",
-                      )}
+                            ? "rgba(240,240,250,0.04)"
+                            : "transparent",
+                        transition: "background 0.15s ease",
+                      }}
                       onMouseEnter={() => setHoverRowId(app.id)}
                       onMouseLeave={() => setHoverRowId(null)}
                       onClick={() => openDrawer(app)}
@@ -568,38 +654,59 @@ export function ApplicationsTable({
 
                       {/* Company */}
                       <td className="px-3 py-3.5">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div
-                            className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 text-xs font-bold text-primary"
-                            aria-hidden="true"
-                          >
-                            {app.company.charAt(0)}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-medium text-foreground truncate">
-                                {app.company}
-                              </span>
-                              {isHighPotential && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-[oklch(var(--accent)/0.15)] text-[oklch(var(--accent))] border border-[oklch(var(--accent)/0.3)] whitespace-nowrap">
-                                  <Sparkles className="w-2.5 h-2.5" />
-                                  High Potential
-                                </span>
-                              )}
-                            </div>
-                            {isStalled && (
-                              <span className="text-[10px] text-[oklch(var(--accent))] font-medium">
-                                Stalled {stalledDays}d
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="nav-text truncate"
+                              style={{
+                                fontWeight: 700,
+                                fontSize: 13,
+                                color: "#f0f0fa",
+                              }}
+                            >
+                              {app.company}
+                            </span>
+                            {isHighPotential && (
+                              <span
+                                className="nav-text flex items-center gap-0.5"
+                                style={{
+                                  fontSize: 9,
+                                  opacity: 0.7,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                <Sparkles className="w-2.5 h-2.5" />
+                                High Fit
                               </span>
                             )}
                           </div>
+                          {isStalled && (
+                            <span
+                              className="nav-text"
+                              style={{
+                                fontSize: 9,
+                                opacity: 0.45,
+                                color: "#f0f0fa",
+                              }}
+                            >
+                              Stalled {stalledDays}d
+                            </span>
+                          )}
                         </div>
                       </td>
 
                       {/* Position */}
                       {isVisible("jobTitle") && (
                         <td className="px-3 py-3.5">
-                          <span className="text-foreground/90 truncate max-w-[180px] block">
+                          <span
+                            className="nav-text truncate block"
+                            style={{
+                              fontWeight: 400,
+                              fontSize: 12,
+                              opacity: 0.75,
+                              maxWidth: 200,
+                            }}
+                          >
                             {app.jobTitle}
                           </span>
                         </td>
@@ -623,9 +730,12 @@ export function ApplicationsTable({
                       {isVisible("fitScore") && (
                         <td className="px-3 py-3.5">
                           {app.fitScore !== undefined ? (
-                            <FitScorePill score={app.fitScore} />
+                            <FitScoreText score={app.fitScore} />
                           ) : (
-                            <span className="text-muted-foreground text-xs">
+                            <span
+                              className="nav-text"
+                              style={{ opacity: 0.2, fontSize: 11 }}
+                            >
                               —
                             </span>
                           )}
@@ -634,32 +744,64 @@ export function ApplicationsTable({
 
                       {/* Date Applied */}
                       {isVisible("appliedAt") && (
-                        <td className="px-3 py-3.5 text-muted-foreground whitespace-nowrap">
-                          {formatDate(app.appliedAt)}
+                        <td className="px-3 py-3.5 whitespace-nowrap">
+                          <span
+                            className="nav-text"
+                            style={{
+                              fontWeight: 400,
+                              fontSize: 11,
+                              opacity: 0.55,
+                            }}
+                          >
+                            {formatDate(app.appliedAt)}
+                          </span>
                         </td>
                       )}
 
                       {/* Salary */}
                       {isVisible("salary") && (
-                        <td className="px-3 py-3.5 text-muted-foreground whitespace-nowrap font-mono text-xs">
-                          {app.salary || "—"}
+                        <td className="px-3 py-3.5 whitespace-nowrap">
+                          <span
+                            className="nav-text"
+                            style={{
+                              fontWeight: 400,
+                              fontSize: 11,
+                              opacity: 0.55,
+                            }}
+                          >
+                            {app.salary || "—"}
+                          </span>
                         </td>
                       )}
 
                       {/* Location */}
                       {isVisible("location") && (
                         <td className="px-3 py-3.5">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <span className="truncate max-w-[120px]">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="nav-text truncate"
+                              style={{
+                                fontWeight: 400,
+                                fontSize: 11,
+                                opacity: 0.55,
+                                maxWidth: 130,
+                              }}
+                            >
                               {app.location}
                             </span>
                             {app.remote && (
-                              <Badge
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0 h-4 border-primary/30 text-primary/80 rounded-full"
+                              <span
+                                className="nav-text"
+                                style={{
+                                  fontSize: 9,
+                                  opacity: 0.6,
+                                  border: "1px solid rgba(240,240,250,0.25)",
+                                  borderRadius: 32,
+                                  padding: "1px 6px",
+                                }}
                               >
                                 Remote
-                              </Badge>
+                              </span>
                             )}
                           </div>
                         </td>
@@ -667,8 +809,17 @@ export function ApplicationsTable({
 
                       {/* Source */}
                       {isVisible("source") && (
-                        <td className="px-3 py-3.5 text-muted-foreground text-xs whitespace-nowrap">
-                          {app.source}
+                        <td className="px-3 py-3.5 whitespace-nowrap">
+                          <span
+                            className="nav-text"
+                            style={{
+                              fontWeight: 400,
+                              fontSize: 11,
+                              opacity: 0.45,
+                            }}
+                          >
+                            {app.source}
+                          </span>
                         </td>
                       )}
 
@@ -684,46 +835,39 @@ export function ApplicationsTable({
                             isHovered ? "opacity-100" : "opacity-0",
                           )}
                         >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          <button
+                            type="button"
+                            className="ghost-button p-1.5 h-7 w-7"
+                            style={{
+                              borderRadius: "50%",
+                              padding: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
                             onClick={() => openDrawer(app)}
                             aria-label="View details"
                             data-ocid={`view-btn-${app.id}`}
                           >
                             <Eye className="w-3.5 h-3.5" />
-                          </Button>
-                          {onEditApplication && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-primary"
-                              onClick={() => onEditApplication(app)}
-                              aria-label="Edit application"
-                              data-ocid={`edit-btn-${app.id}`}
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          </button>
+                          <button
+                            type="button"
+                            className="ghost-button p-1.5 h-7 w-7"
+                            style={{
+                              borderRadius: "50%",
+                              padding: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderColor: "rgba(192,57,43,0.4)",
+                            }}
                             onClick={() => deleteMutation.mutate(app.id)}
                             aria-label="Delete application"
                             data-ocid={`delete-btn-${app.id}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                        <div
-                          className={cn(
-                            "flex justify-end",
-                            isHovered && "hidden",
-                          )}
-                        >
-                          <MoreHorizontal className="w-4 h-4 text-muted-foreground/30" />
+                          </button>
                         </div>
                       </td>
                     </motion.tr>
@@ -737,44 +881,72 @@ export function ApplicationsTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 px-1">
-          <p className="text-sm text-muted-foreground">
+        <div
+          className="flex items-center justify-between pt-4 px-2"
+          style={{ borderTop: "1px solid rgba(240,240,250,0.08)" }}
+        >
+          <span
+            className="nav-text"
+            style={{ opacity: 0.4, fontSize: 11, fontWeight: 400 }}
+          >
             Page {page} of {totalPages}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="ghost-button"
+              style={{
+                padding: "6px 16px",
+                fontSize: 11,
+                opacity: page <= 1 ? 0.3 : 1,
+              }}
               onClick={() => onPageChange(page - 1)}
               disabled={page <= 1}
               data-ocid="pagination-prev"
             >
-              Previous
-            </Button>
+              Prev
+            </button>
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               const p = i + 1;
               return (
-                <Button
+                <button
                   key={p}
-                  variant={p === page ? "default" : "ghost"}
-                  size="sm"
-                  className="w-8 h-8 p-0"
+                  type="button"
+                  className="ghost-button"
+                  style={{
+                    padding: "6px 10px",
+                    fontSize: 11,
+                    background:
+                      p === page
+                        ? "rgba(240,240,250,0.15)"
+                        : "rgba(240,240,250,0.07)",
+                    borderColor:
+                      p === page
+                        ? "rgba(240,240,250,0.6)"
+                        : "rgba(240,240,250,0.2)",
+                    minWidth: 32,
+                  }}
                   onClick={() => onPageChange(p)}
                   data-ocid={`pagination-page-${p}`}
                 >
                   {p}
-                </Button>
+                </button>
               );
             })}
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
+              className="ghost-button"
+              style={{
+                padding: "6px 16px",
+                fontSize: 11,
+                opacity: page >= totalPages ? 0.3 : 1,
+              }}
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages}
               data-ocid="pagination-next"
             >
               Next
-            </Button>
+            </button>
           </div>
         </div>
       )}

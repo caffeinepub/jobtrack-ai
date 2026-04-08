@@ -1,6 +1,3 @@
-import { cn } from "@/lib/utils";
-import { Minus, TrendingDown, TrendingUp } from "lucide-react";
-
 interface MetricCardProps {
   label: string;
   value: string | number;
@@ -20,65 +17,84 @@ export function MetricCard({
   trend,
   trendValue,
   description,
-  colorClass,
-  className,
   "data-ocid": dataOcid,
 }: MetricCardProps) {
-  const TrendIcon =
-    trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
+  const trendSymbol = trend === "up" ? "↑" : trend === "down" ? "↓" : "—";
 
-  const trendColor =
+  const trendOpacity =
     trend === "up"
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "opacity-100"
       : trend === "down"
-        ? "text-rose-500 dark:text-rose-400"
-        : "text-muted-foreground";
+        ? "opacity-60"
+        : "opacity-40";
 
   return (
     <div
       data-ocid={dataOcid}
-      className={cn(
-        "group relative bg-card border border-border rounded-xl p-5 overflow-hidden transition-smooth",
-        "hover:shadow-md hover:border-primary/20",
-        className,
-      )}
+      className="flex flex-col gap-1"
+      style={{ minWidth: 0 }}
     >
-      {/* subtle accent bar on the left */}
-      <div
-        className={cn(
-          "absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full opacity-60",
-          colorClass ?? "bg-primary",
-        )}
-      />
-
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground pl-3 mb-3">
+      {/* Label — nav text size */}
+      <p
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "1.17px",
+          color: "rgba(240,240,250,0.55)",
+          lineHeight: 1,
+        }}
+      >
         {label}
       </p>
 
-      <div className="pl-3 flex items-end gap-1.5">
-        <span className="text-3xl font-bold text-foreground tabular-nums leading-none">
+      {/* Value — display size */}
+      <div className="flex items-end gap-2" style={{ lineHeight: 1 }}>
+        <span
+          style={{
+            fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
+            fontWeight: 700,
+            letterSpacing: "0.96px",
+            textTransform: "uppercase",
+            color: "#f0f0fa",
+            fontFamily: "'Space Grotesk', sans-serif",
+            lineHeight: 1,
+          }}
+        >
           {value}
         </span>
         {unit && (
-          <span className="text-sm font-medium text-muted-foreground mb-0.5">
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.96px",
+              color: "rgba(240,240,250,0.6)",
+              paddingBottom: "0.25rem",
+            }}
+          >
             {unit}
           </span>
         )}
       </div>
 
+      {/* Trend indicator */}
       {(trend || trendValue || description) && (
-        <div
-          className={cn("pl-3 mt-2.5 flex items-center gap-1.5", trendColor)}
+        <p
+          className={trendOpacity}
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "1.17px",
+            color: "#f0f0fa",
+            marginTop: 2,
+          }}
         >
-          {trend && <TrendIcon className="w-3.5 h-3.5 shrink-0" />}
-          <span className="text-xs font-medium">
-            {trendValue ?? description}
-          </span>
-        </div>
+          {trendSymbol} {trendValue ?? description}
+        </p>
       )}
-
-      {/* hover glow */}
-      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-smooth pointer-events-none bg-primary/[0.02]" />
     </div>
   );
 }
