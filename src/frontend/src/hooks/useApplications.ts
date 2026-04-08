@@ -6,6 +6,7 @@ import type {
   UpdateApplicationArgs as BackendUpdateApplicationArgs,
 } from "@/backend";
 import { JobType as BackendJobType, createActor } from "@/backend";
+import type { GrokModel } from "@/store/useAppStore";
 import { useAppStore } from "@/store/useAppStore";
 import type {
   AddApplicationArgs,
@@ -338,21 +339,42 @@ export function useInitSampleData() {
   });
 }
 
-// ── Grok API Key hooks (stored locally via Zustand) ───────────────────────────
+// ── Grok API Key hooks ────────────────────────────────────────────────────────
 
 export function useGetGrokApiKey() {
-  const grokApiKey = useAppStore((s) => s.grokApiKey);
-  return { data: grokApiKey, isLoading: false };
+  const { actor, isFetching } = useActor(createActor);
+  const localKey = useAppStore((s) => s.grokApiKey);
+
+  const query = useQuery<string | null>({
+    queryKey: ["grokApiKey"],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getGrokApiKey();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 300_000,
+  });
+
+  // Prefer backend data; fall back to local Zustand store
+  return { data: query.data ?? localKey ?? null, isLoading: query.isLoading };
 }
 
 export function useSetGrokApiKey() {
+  const { actor } = useActor(createActor);
   const { setGrokApiKey, clearGrokApiKey } = useAppStore();
+  const qc = useQueryClient();
 
   const saveMutation = useMutation<void, Error, string>({
     mutationFn: async (key: string) => {
+      // Persist locally immediately
       setGrokApiKey(key);
+      // Also persist to backend so parseJobUrl can use it
+      if (actor) {
+        await actor.setGrokApiKey(key);
+      }
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["grokApiKey"] });
       toast.success("Grok API key saved");
     },
     onError: () => {
@@ -363,11 +385,38 @@ export function useSetGrokApiKey() {
   const clearMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
       clearGrokApiKey();
+      if (actor) {
+        await actor.setGrokApiKey("");
+      }
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["grokApiKey"] });
       toast.success("Grok API key cleared");
     },
   });
 
   return { saveMutation, clearMutation };
+}
+
+// ── Grok Model hooks (client-side only via Zustand) ───────────────────────────
+
+export function useGetGrokModel() {
+  const grokModel = useAppStore((s) => s.grokModel);
+  return { data: grokModel };
+}
+
+export function useSetGrokModel() {
+  const { setGrokModel } = useAppStore();
+
+  return useMutation<void, Error, GrokModel>({
+    mutationFn: async (model: GrokModel) => {
+      setGrokModel(model);
+    },
+    onSuccess: () => {
+      toast.success("Model preference saved");
+    },
+    onError: () => {
+      toast.error("Failed to save model preference");
+    },
+  });
 }

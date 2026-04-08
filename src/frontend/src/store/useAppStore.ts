@@ -4,6 +4,8 @@ import { persist } from "zustand/middleware";
 
 type SelectedView = "table" | "kanban";
 
+export type GrokModel = "grok-3" | "grok-3-mini" | "grok-2-1212";
+
 interface AppStore {
   // View
   selectedView: SelectedView;
@@ -30,6 +32,10 @@ interface AppStore {
   grokApiKey: string;
   setGrokApiKey: (key: string) => void;
   clearGrokApiKey: () => void;
+
+  // Grok Model
+  grokModel: GrokModel;
+  setGrokModel: (model: GrokModel) => void;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -70,6 +76,9 @@ export const useAppStore = create<AppStore>()(
       grokApiKey: "",
       setGrokApiKey: (key) => set({ grokApiKey: key }),
       clearGrokApiKey: () => set({ grokApiKey: "" }),
+
+      grokModel: "grok-3-mini",
+      setGrokModel: (model) => set({ grokModel: model }),
     }),
     {
       name: "jobtrack-app-store",
@@ -78,6 +87,7 @@ export const useAppStore = create<AppStore>()(
         columnVisibility: state.columnVisibility,
         sidebarCollapsed: state.sidebarCollapsed,
         grokApiKey: state.grokApiKey,
+        grokModel: state.grokModel,
       }),
     },
   ),

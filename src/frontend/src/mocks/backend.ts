@@ -297,4 +297,8 @@ export const mockBackend: backendInterface = {
   getGrokApiKey: async () => null,
 
   setGrokApiKey: async (_key: string) => {},
+
+  getGrokModel: async () => null,
+
+  setGrokModel: async (_model: string) => {},
 };

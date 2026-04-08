@@ -187,12 +187,14 @@ service : {
    (GetApplicationsResult) query;
   getCallerUserRole: () -> (UserRole) query;
   getGrokApiKey: () -> (opt text);
+  getGrokModel: () -> (opt text);
   getInsights: () -> (vec AiInsight);
   initSampleData: () -> (nat);
   isCallerAdmin: () -> (bool) query;
   parseJobUrl: (url: text) -> (ParsedJobDetails);
   searchApplications: (searchQuery: text) -> (vec Application);
   setGrokApiKey: (key: text) -> ();
+  setGrokModel: (model: text) -> ();
   transform: (input: TransformationInput) -> (TransformationOutput) query;
   updateApplication: (args: UpdateApplicationArgs) -> (opt Application);
   updateApplicationStatus: (id: nat, status: ApplicationStatus) ->

@@ -12,6 +12,7 @@ mixin (
   applications : Map.Map<Nat, Types.Application>,
   nextAppId : [var Nat],
   grokApiKeys : Map.Map<Types.UserId, Text>,
+  grokModels : Map.Map<Types.UserId, Text>,
 ) {
 
   // --- Transform callback required by http-outcalls ---
@@ -33,6 +34,22 @@ mixin (
       Runtime.trap("Unauthorized");
     };
     grokApiKeys.get(caller)
+  };
+
+  // --- Model Preference ---
+
+  public shared ({ caller }) func setGrokModel(model : Text) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized");
+    };
+    grokModels.add(caller, model);
+  };
+
+  public shared ({ caller }) func getGrokModel() : async ?Text {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized");
+    };
+    grokModels.get(caller)
   };
 
   // --- CRUD ---
@@ -91,9 +108,14 @@ mixin (
     // Try Grok API if key is set
     switch (grokApiKeys.get(caller)) {
       case (?apiKey) {
-        let prompt = "You are a job posting parser. Given this job posting URL: " # url # "\n\nReturn a JSON object (and nothing else) with these exact fields:\n- title (string): job title\n- company (string): company name\n- location (string): job location\n- salary_min (number or null): minimum salary if mentioned\n- salary_max (number or null): maximum salary if mentioned\n- job_type (string): one of \"full-time\", \"part-time\", \"contract\", \"remote\"\n- description (string): brief job description (2-3 sentences)\n- requirements (array of strings): key requirements\n- job_fit_score (number 0-100): score based on job quality and demand\n\nRespond with ONLY the JSON object, no markdown, no explanation.";
+        let model = switch (grokModels.get(caller)) {
+          case (?m) m;
+          case null "grok-3-mini";
+        };
 
-        let requestBody = "{\"model\":\"grok-3-mini\",\"messages\":[{\"role\":\"user\",\"content\":" # jsonString(prompt) # "}],\"max_tokens\":1024}";
+        let prompt = "You are a job posting parser. You cannot fetch URLs, but you can infer information from the URL structure itself.\n\nJob posting URL: " # url # "\n\nInstructions:\n1. Infer the company name from the URL domain/path (examples: 'careers.stripe.com' -> 'Stripe', 'jobs.google.com' -> 'Google', 'linkedin.com/jobs/view/software-engineer-at-acme' -> 'Acme', 'greenhouse.io/jobs/acme' -> 'Acme', 'lever.co/acme' -> 'Acme')\n2. Infer the job title/position from the URL path segments if present\n3. Infer location, job type, and other details from any keywords in the URL\n4. For fields you cannot determine, use reasonable defaults\n\nReturn ONLY a JSON object (no markdown, no explanation) with EXACTLY these field names:\n{\n  \"companyName\": \"string - company name inferred from URL domain or path\",\n  \"position\": \"string - job title or position\",\n  \"location\": \"string - city/state or Remote\",\n  \"jobType\": \"string - one of: full_time, part_time, contract, internship, remote\",\n  \"salaryRange\": { \"min\": number_or_null, \"max\": number_or_null },\n  \"fitScore\": number_between_0_and_100,\n  \"tags\": [\"array\", \"of\", \"relevant\", \"skill\", \"tags\"],\n  \"notes\": \"string - brief description of what was inferred\"\n}";
+
+        let requestBody = "{\"model\":" # jsonString(model) # ",\"messages\":[{\"role\":\"user\",\"content\":" # jsonString(prompt) # "}],\"max_tokens\":1024}";
 
         let headers : [OutCall.Header] = [
           { name = "Authorization"; value = "Bearer " # apiKey },
@@ -230,11 +252,11 @@ mixin (
   // Parse the JSON content returned by Grok into ParsedJobDetails.
   // Uses simple text search for field extraction (no JSON parser available).
   func parseGrokJobJson(json : Text, originalUrl : Text) : Types.ParsedJobDetails {
-    let company = extractJsonStringField(json, "company");
-    let title = extractJsonStringField(json, "title");
+    let company = extractJsonStringField(json, "companyName");
+    let title = extractJsonStringField(json, "position");
     let location = extractJsonStringField(json, "location");
-    let jobTypeStr = extractJsonStringField(json, "job_type");
-    let fitScore = extractJsonNatField(json, "job_fit_score");
+    let jobTypeStr = extractJsonStringField(json, "jobType");
+    let fitScore = extractJsonNatField(json, "fitScore");
 
     let jobType : ?Types.JobType = if (jobTypeStr.contains(#text "remote")) {
       ?#remote
@@ -246,8 +268,12 @@ mixin (
       ?#onsite
     };
 
-    let salMin = extractJsonNatField(json, "salary_min");
-    let salMax = extractJsonNatField(json, "salary_max");
+    // Extract salaryRange.min and salaryRange.max from nested object
+    let salMin = extractJsonNatField(json, "min");
+    let salMax = extractJsonNatField(json, "max");
+
+    // Extract tags array (best-effort: first string inside array not used; tags returned as empty)
+    ignore(extractJsonStringField(json, "tags"));
 
     {
       companyName = if (company == "") "Unknown Company" else company;

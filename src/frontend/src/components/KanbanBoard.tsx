@@ -15,7 +15,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const COLUMNS: { id: ApplicationStatus; label: string }[] = [
@@ -44,6 +44,12 @@ export function KanbanBoard({ applications }: Props) {
     null,
   );
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync local items whenever the applications prop changes (e.g. after a new
+  // application is added and React Query re-fetches the list).
+  useEffect(() => {
+    setItems(applications);
+  }, [applications]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

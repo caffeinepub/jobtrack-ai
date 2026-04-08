@@ -62,5 +62,10 @@ actor {
       var root : Node__46230540<UserId__786370870, Text>;
       var size : Nat__490723111
     };
+  stable grokModels :
+    {
+      var root : Node__46230540<UserId__786370870, Text>;
+      var size : Nat__490723111
+    };
   stable nextAppId : [var Nat]
 };

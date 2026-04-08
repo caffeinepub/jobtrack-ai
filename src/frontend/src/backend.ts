@@ -257,12 +257,14 @@ export interface backendInterface {
     getApplications(args: GetApplicationsArgs): Promise<GetApplicationsResult>;
     getCallerUserRole(): Promise<UserRole>;
     getGrokApiKey(): Promise<string | null>;
+    getGrokModel(): Promise<string | null>;
     getInsights(): Promise<Array<AiInsight>>;
     initSampleData(): Promise<bigint>;
     isCallerAdmin(): Promise<boolean>;
     parseJobUrl(url: string): Promise<ParsedJobDetails>;
     searchApplications(searchQuery: string): Promise<Array<Application>>;
     setGrokApiKey(key: string): Promise<void>;
+    setGrokModel(model: string): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
     updateApplication(args: UpdateApplicationArgs): Promise<Application | null>;
     updateApplicationStatus(id: bigint, status: ApplicationStatus): Promise<Application | null>;
@@ -396,6 +398,20 @@ export class Backend implements backendInterface {
             return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getGrokModel(): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGrokModel();
+                return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGrokModel();
+            return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getInsights(): Promise<Array<AiInsight>> {
         if (this.processError) {
             try {
@@ -477,6 +493,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.setGrokApiKey(arg0);
+            return result;
+        }
+    }
+    async setGrokModel(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setGrokModel(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setGrokModel(arg0);
             return result;
         }
     }

@@ -174,12 +174,14 @@ export interface backendInterface {
     getApplications(args: GetApplicationsArgs): Promise<GetApplicationsResult>;
     getCallerUserRole(): Promise<UserRole>;
     getGrokApiKey(): Promise<string | null>;
+    getGrokModel(): Promise<string | null>;
     getInsights(): Promise<Array<AiInsight>>;
     initSampleData(): Promise<bigint>;
     isCallerAdmin(): Promise<boolean>;
     parseJobUrl(url: string): Promise<ParsedJobDetails>;
     searchApplications(searchQuery: string): Promise<Array<Application>>;
     setGrokApiKey(key: string): Promise<void>;
+    setGrokModel(model: string): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
     updateApplication(args: UpdateApplicationArgs): Promise<Application | null>;
     updateApplicationStatus(id: bigint, status: ApplicationStatus): Promise<Application | null>;

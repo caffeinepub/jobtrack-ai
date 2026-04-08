@@ -11,6 +11,7 @@ actor {
   let applications : Map.Map<Nat, Types.Application> = Map.empty<Nat, Types.Application>();
   let nextAppId : [var Nat] = [var 1];
   let grokApiKeys : Map.Map<Types.UserId, Text> = Map.empty<Types.UserId, Text>();
+  let grokModels : Map.Map<Types.UserId, Text> = Map.empty<Types.UserId, Text>();
 
-  include ApplicationsMixin(accessControlState, applications, nextAppId, grokApiKeys);
+  include ApplicationsMixin(accessControlState, applications, nextAppId, grokApiKeys, grokModels);
 };
